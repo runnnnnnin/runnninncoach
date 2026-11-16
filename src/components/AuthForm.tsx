@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Locale } from "@/i18n/config";
 import { UI_TEXT } from "@/i18n/ui";
+import { BRAND } from "@/lib/brand";
 import { loadPlanRaw } from "@/lib/storage";
 
 /** Le plan ouvert dans ce navigateur, s'il est enregistré : il sera rattaché au compte. */
@@ -95,7 +96,16 @@ export function AuthForm({ lang, mode }: { lang: Locale; mode: "login" | "signup
           {signup ? t.toLogin : t.toSignup}
         </Link>
       </p>
-      {!signup && <p className="mt-4 text-xs text-fog">{t.noReset}</p>}
+      {!signup && (
+        <p className="mt-4 text-xs text-fog">
+          {t.noReset}{" "}
+          {BRAND.contactEmail && (
+            <a className="underline hover:text-bone" href={`mailto:${BRAND.contactEmail}`}>
+              {BRAND.contactEmail}
+            </a>
+          )}
+        </p>
+      )}
     </div>
   );
 }
