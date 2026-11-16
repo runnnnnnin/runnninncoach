@@ -126,4 +126,6 @@ export type Plan = {
   weeks: Week[];
   personalizedByAI: boolean;
   createdAt: string;
+  /** Identifiant du testeur en base (absent si la base n'est pas branchée). */
+  testerId?: string;
 };

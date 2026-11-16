@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { MotionRunner } from "@/components/MotionRunner";
 import { loadPlanRaw } from "@/lib/storage";
+import { WeekFeedback } from "./WeekFeedback";
 import { DAY_LABELS, type Plan, type Session, type SessionKind } from "@/lib/types";
 
 const KIND_STYLE: Record<SessionKind, { dot: string; label: string }> = {
@@ -159,6 +160,7 @@ export function PlanView() {
               </div>
             ))}
           </div>
+          {plan.testerId && <WeekFeedback key={`${plan.testerId}-${wk.index}`} testerId={plan.testerId} week={wk} />}
         </section>
       ))}
 
@@ -185,7 +187,7 @@ export function PlanView() {
       </section>
 
       <p className="no-print label mt-12 text-center text-fog">
-        Bientôt · ton plan s&apos;ajuste chaque semaine selon tes séances réelles
+        Bientôt · ton plan s&apos;ajustera chaque semaine selon tes retours
       </p>
     </div>
   );

@@ -25,6 +25,9 @@ type Draft = Omit<Profile, "goal" | "level" | "age"> & {
   goal?: Goal;
   level?: Level;
   age?: Profile["age"];
+  email: string;
+  consentNews: boolean;
+  website: string;
 };
 
 const INITIAL: Draft = {
@@ -36,7 +39,12 @@ const INITIAL: Draft = {
   otherSports: [],
   equipment: "aucun",
   injuries: [],
+  email: "",
+  consentNews: false,
+  website: "",
 };
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const INTENSITY = { leger: "Léger", modere: "Modéré", intense: "Intense" } as const;
 
@@ -331,6 +339,55 @@ export function Questionnaire() {
               ))}
             </div>
           </Field>
+        </div>
+      ),
+    },
+    {
+      title: "Où t'envoyer ton plan ?",
+      subtitle: "Pour retrouver ton plan et nous dire chaque semaine comment ça se passe.",
+      valid: EMAIL_RE.test(d.email.trim()),
+      body: (
+        <div className="space-y-8">
+          <Field label="Ton email">
+            <input
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              value={d.email}
+              onChange={(e) => set("email", e.target.value)}
+              maxLength={200}
+              placeholder="toi@exemple.com"
+              className="serif w-full border-b border-hairline bg-transparent py-3 text-3xl text-bone outline-none placeholder:text-fog/40 focus:border-bone sm:text-4xl"
+            />
+          </Field>
+          {/* Champ piège invisible pour les robots */}
+          <input
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden
+            value={d.website}
+            onChange={(e) => set("website", e.target.value)}
+            className="absolute -left-[9999px] h-0 w-0 opacity-0"
+          />
+          <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-mist/80">
+            <input
+              type="checkbox"
+              checked={d.consentNews}
+              onChange={(e) => set("consentNews", e.target.checked)}
+              className="mt-1 h-4 w-4 accent-[var(--signal)]"
+            />
+            <span>
+              J&apos;accepte de recevoir les nouveautés de RunFlow pendant la phase de test. Optionnel, désinscription à tout
+              moment.
+            </span>
+          </label>
+          <p className="text-xs leading-relaxed text-fog">
+            Tes réponses servent uniquement à créer ton plan et à améliorer RunFlow. Rien n&apos;est revendu.{" "}
+            <a href="/confidentialite" target="_blank" className="underline hover:text-bone">
+              Confidentialité
+            </a>
+          </p>
         </div>
       ),
     },
