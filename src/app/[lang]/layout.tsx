@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale, LOCALES } from "@/i18n/config";
 import { UI_TEXT } from "@/i18n/ui";
+import { BRAND } from "@/lib/brand";
 import { fontVars } from "../fonts";
 import "../globals.css";
 
@@ -14,9 +15,17 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Prom
   if (!hasLocale(lang)) return {};
   const t = UI_TEXT[lang].meta;
   return {
+    metadataBase: new URL(BRAND.siteUrl),
     title: t.title,
     description: t.description,
-    alternates: { languages: { en: "/en", fr: "/fr" } },
+    openGraph: {
+      type: "website",
+      siteName: BRAND.name,
+      title: t.title,
+      description: t.description,
+      locale: lang === "fr" ? "fr_FR" : "en_US",
+    },
+    twitter: { card: "summary", title: t.title, description: t.description },
   };
 }
 

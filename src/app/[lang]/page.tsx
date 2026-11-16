@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LangSwitch } from "@/components/LangSwitch";
@@ -221,6 +222,14 @@ function FinalCta({ t, lang }: { t: UI; lang: Locale }) {
       </div>
     </section>
   );
+}
+
+export async function generateMetadata({ params }: PageProps<"/[lang]">): Promise<Metadata> {
+  const { lang } = await params;
+  return {
+    alternates: { canonical: `/${lang}`, languages: { en: "/en", fr: "/fr", "x-default": "/en" } },
+    openGraph: { url: `/${lang}` },
+  };
 }
 
 export default async function Home({ params }: PageProps<"/[lang]">) {
