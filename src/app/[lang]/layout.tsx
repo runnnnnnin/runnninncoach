@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { notFound } from "next/navigation";
 import { hasLocale, LOCALES } from "@/i18n/config";
 import { UI_TEXT } from "@/i18n/ui";
@@ -34,7 +35,11 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
   if (!hasLocale(lang)) notFound();
   return (
     <html lang={lang} className={`${fontVars} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        {/* Statistiques de visite anonymes, sans cookie (Vercel Web Analytics) */}
+        <Analytics />
+      </body>
     </html>
   );
 }
