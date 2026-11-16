@@ -297,7 +297,9 @@ export async function completionsOf(testerId: string) {
 
 export async function setCompletion(testerId: string, sessionId: string, done: boolean) {
   const s = await sql();
-  const exists = await s`SELECT 1 FROM testers WHERE id = ${testerId}`;
+  // La séance doit exister dans ce plan.
+  const exists = await s`SELECT 1 FROM testers WHERE id = ${testerId}
+    AND jsonb_path_exists(plan, '$.weeks[*].days[*].sessions[*] ? (@.id == $sid)', jsonb_build_object('sid', ${sessionId}::text))`;
   if (!exists.length) return false;
   if (done) await s`INSERT INTO completions (tester_id, session_id) VALUES (${testerId}, ${sessionId}) ON CONFLICT DO NOTHING`;
   else await s`DELETE FROM completions WHERE tester_id = ${testerId} AND session_id = ${sessionId}`;
