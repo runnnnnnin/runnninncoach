@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
+import { useMe } from "@/components/AccountLink";
 import type { Locale } from "@/i18n/config";
 import { UI_TEXT } from "@/i18n/ui";
 import { LABELS } from "@/lib/labels";
@@ -110,7 +111,8 @@ function Stepper({ value, min, max, onChange, unit, labels }: { value: number; m
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+function Field({ label, hint, hidden, children }: { label: string; hint?: string; hidden?: boolean; children: ReactNode }) {
+  if (hidden) return null;
   return (
     <div className="space-y-3">
       <div>
@@ -129,6 +131,11 @@ export function Questionnaire({ lang }: { lang: Locale }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [d, setD] = useState<Draft>(INITIAL);
+  // Connecté : on connaît déjà le prénom et l'email, on ne les redemande pas.
+  const me = useMe();
+  const account = me?.user ?? null;
+  const knownName = account?.firstName?.trim() || "";
+  const firstName = knownName || d.firstName;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newSport, setNewSport] = useState<OtherSport>({ sport: "football", day: "mar", intensity: "intense", minutes: 90 });
@@ -155,10 +162,11 @@ export function Questionnaire({ lang }: { lang: Locale }) {
     {
       title: t.s1.title,
       subtitle: t.s1.sub,
-      valid: d.firstName.trim().length > 0 && !!d.age,
+      valid: me !== undefined && firstName.trim().length > 0 && !!d.age,
       body: (
         <div className="space-y-8">
-          <Field label={t.s1.name}>
+          {knownName && <p className="serif text-4xl">{t.s1.hello(knownName)}</p>}
+          <Field label={t.s1.name} hidden={me === undefined || Boolean(knownName)}>
             <input
               value={d.firstName}
               onChange={(e) => set("firstName", e.target.value)}
@@ -421,8 +429,10 @@ export function Questionnaire({ lang }: { lang: Locale }) {
     },
   ];
 
-  const current = steps[step];
-  const last = step === steps.length - 1;
+  // Connecté : pas d'étape « email », le plan arrive directement dans « Mes plans ».
+  if (account) steps.pop();
+  const current = steps[Math.min(step, steps.length - 1)];
+  const last = step >= steps.length - 1;
 
   async function submit() {
     setLoading(true);
@@ -431,7 +441,7 @@ export function Questionnaire({ lang }: { lang: Locale }) {
       const res = await fetch("/api/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...d, goals: undefined, goal: d.goals[0], otherGoals: d.goals.slice(1), lang }),
+        body: JSON.stringify({ ...d, firstName, ...(account ? { email: account.email } : {}), goals: undefined, goal: d.goals[0], otherGoals: d.goals.slice(1), lang }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? t.errorGeneric);
@@ -447,7 +457,7 @@ export function Questionnaire({ lang }: { lang: Locale }) {
     return (
       <div className="flex flex-col items-center py-24 text-center">
         <div className="h-px w-40 overflow-hidden bg-hairline"><div className="h-px w-1/3 animate-[streak_1.2s_ease-in-out_infinite_alternate] bg-bone" /></div>
-        <p className="serif mt-10 text-4xl">{t.loadingTitle(d.firstName)}</p>
+        <p className="serif mt-10 text-4xl">{t.loadingTitle(firstName)}</p>
         <p className="mt-3 text-fog">{t.loadingBody}</p>
       </div>
     );

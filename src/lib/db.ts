@@ -234,6 +234,11 @@ export async function userByEmail(email: string) {
   return (rows[0] as (User & { password_hash: string }) | undefined) ?? null;
 }
 
+export async function setUserFirstName(userId: string, firstName: string) {
+  const s = await sql();
+  await s`UPDATE users SET first_name = ${firstName} WHERE id = ${userId} AND first_name IS NULL`;
+}
+
 export async function createSession(tokenHash: string, userId: string, days: number) {
   const s = await sql();
   await s`INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (${tokenHash}, ${userId}, now() + make_interval(days => ${days}))`;

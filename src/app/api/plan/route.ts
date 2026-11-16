@@ -2,7 +2,7 @@ import { z } from "zod";
 import { buildPlan } from "@/lib/engine";
 import { personalize } from "@/lib/ai";
 import { currentUser } from "@/lib/auth";
-import { hashIp, recentPlansFrom, saveTester } from "@/lib/db";
+import { hashIp, recentPlansFrom, saveTester, setUserFirstName } from "@/lib/db";
 import { profileSchema } from "@/lib/types";
 
 const requestSchema = profileSchema.extend({
@@ -26,7 +26,10 @@ export async function POST(req: Request) {
     return Response.json({ error: err.invalid }, { status: 400 });
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { email, consentNews, website, ...profile } = parsed.data;
+  const { email: typedEmail, consentNews, website, ...profile } = parsed.data;
+  // Connecté : le plan est lié au compte et à son email, pas à ce qui est envoyé par la page.
+  const user = await currentUser().catch(() => null);
+  const email = user?.email ?? typedEmail;
 
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
   const ipHash = hashIp(ip);
@@ -42,8 +45,8 @@ export async function POST(req: Request) {
   const testerId = crypto.randomUUID();
   let saved = false;
   try {
-    // Connecté : le plan est rangé directement dans « Mes plans ».
-    const user = await currentUser();
+    // Connecté : le plan est rangé directement dans « Mes plans », et le prénom est retenu pour la prochaine fois.
+    if (user && !user.first_name) await setUserFirstName(user.id, profile.firstName).catch(() => {});
     saved = await saveTester({ id: testerId, email, consentNews, profile, plan, ipHash, userId: user?.id });
   } catch (e) {
     console.error("[RunFlow] Enregistrement du testeur impossible :", e);

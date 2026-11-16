@@ -59,7 +59,7 @@ const en = {
     loadingTitle: (n: string) => `${n}, your coach is building your plan…`,
     loadingBody: "We're placing every session around your week and your coach is writing your tips. Allow about fifteen seconds.",
     errorGeneric: "Something went wrong, please try again.",
-    s1: { title: "Let's get to know you", sub: "So your coach knows who they're talking to.", name: "Your first name", namePh: "e.g. Alex", age: "Your age" },
+    s1: { title: "Let's get to know you", sub: "So your coach knows who they're talking to.", name: "Your first name", namePh: "e.g. Alex", age: "Your age", hello: (n: string) => `Hi ${n}.` },
     s2: { title: "Your goals", sub: "What would make you proud in a few months.", hint: "Up to 3 choices. The first one you pick is your main goal.", main: "Main" },
     s3: { title: "Your level today", sub: "Be honest: that's what makes the plan right." },
     s4: {
@@ -285,7 +285,7 @@ const fr: UI = {
     loadingTitle: (n) => `${n}, ton coach prépare ton plan…`,
     loadingBody: "On place chaque séance autour de ta semaine et ton coach t'écrit ses conseils. Compte une quinzaine de secondes.",
     errorGeneric: "Une erreur est survenue, réessaie.",
-    s1: { title: "Faisons connaissance", sub: "Pour que ton coach sache à qui il parle.", name: "Ton prénom", namePh: "Ex. Camille", age: "Ton âge" },
+    s1: { title: "Faisons connaissance", sub: "Pour que ton coach sache à qui il parle.", name: "Ton prénom", namePh: "Ex. Camille", age: "Ton âge", hello: (n: string) => `Salut ${n}.` },
     s2: { title: "Tes objectifs", sub: "Ce qui te ferait vraiment plaisir dans quelques mois.", hint: "Jusqu'à 3 choix. Le premier choisi est ton objectif principal.", main: "Principal" },
     s3: { title: "Ton niveau aujourd'hui", sub: "Sois honnête : c'est ce qui rend le plan juste." },
     s4: {
