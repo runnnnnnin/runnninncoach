@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useMe } from "@/components/AccountLink";
 import { MotionRunner } from "@/components/MotionRunner";
 import { loadPlanRaw } from "@/lib/storage";
+import { computeProgress, loadDone, saveDone, type Done } from "@/lib/progress";
 import { CalendarExport } from "./CalendarExport";
+import { ProgressPanel } from "./ProgressPanel";
 import { WeekFeedback } from "./WeekFeedback";
 import type { Locale } from "@/i18n/config";
 import { UI_TEXT, type UI } from "@/i18n/ui";
@@ -19,10 +22,10 @@ const KIND_STYLE: Record<SessionKind, { dot: string; label: "run" | "key" | "str
   renfo: { dot: "bg-klein", label: "strength" },
 };
 
-function SessionCard({ s, t }: { s: Session; t: UI["plan"] }) {
+function SessionCard({ s, t, tp, done, onToggle }: { s: Session; t: UI["plan"]; tp: UI["prog"]; done: boolean; onToggle: () => void }) {
   const style = KIND_STYLE[s.kind];
   return (
-    <div className="print-break border border-hairline bg-asphalt/70 p-5">
+    <div className={`print-break border bg-asphalt/70 p-5 transition ${done ? "border-bone/40" : "border-hairline"}`}>
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="label flex items-center gap-2 text-fog">
@@ -66,13 +69,24 @@ function SessionCard({ s, t }: { s: Session; t: UI["plan"] }) {
           {s.coachNote}
         </p>
       )}
+      <button
+        onClick={onToggle}
+        aria-pressed={done}
+        className={`no-print mt-5 inline-flex items-center gap-3 border px-4 py-2.5 text-sm transition ${
+          done ? "border-bone bg-bone text-ink" : "border-hairline text-mist hover:border-bone/60 hover:text-bone"
+        }`}
+      >
+        <span className={`flex h-4 w-4 items-center justify-center rounded-full border text-[10px] leading-none ${done ? "border-ink" : "border-fog"}`}>
+          {done ? "✓" : ""}
+        </span>
+        {done ? tp.marked : tp.mark}
+      </button>
     </div>
   );
 }
 
 export function PlanView({ lang }: { lang: Locale }) {
   const t = UI_TEXT[lang].plan;
-  const L = LABELS[lang];
   const raw = useSyncExternalStore(
     () => () => {},
     () => loadPlanRaw(),
@@ -86,7 +100,6 @@ export function PlanView({ lang }: { lang: Locale }) {
       return null;
     }
   }, [raw]);
-  const [week, setWeek] = useState(0);
 
   if (plan === undefined) return null;
   if (plan === null)
@@ -98,6 +111,64 @@ export function PlanView({ lang }: { lang: Locale }) {
         </Link>
       </div>
     );
+
+  return <PlanBody key={plan.testerId ?? plan.createdAt} plan={plan} lang={lang} />;
+}
+
+function PlanBody({ plan, lang }: { plan: Plan; lang: Locale }) {
+  const t = UI_TEXT[lang].plan;
+  const ta = UI_TEXT[lang].account;
+  const tp = UI_TEXT[lang].prog;
+  const L = LABELS[lang];
+  const me = useMe();
+  const [week, setWeek] = useState(0);
+
+  // Séances cochées : gardées dans le navigateur, et sur le serveur quand le plan y est enregistré.
+  const planKey = plan.testerId ?? plan.createdAt;
+  const [done, setDone] = useState<Done>({});
+  const [fresh, setFresh] = useState<string | null>(null);
+  const freshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      let merged = loadDone(planKey);
+      if (plan.testerId) {
+        const remote = await fetch(`/api/progress?plan=${plan.testerId}`)
+          .then((r) => (r.ok ? (r.json() as Promise<{ done: Done }>) : null))
+          .catch(() => null);
+        if (remote) merged = remote.done;
+      } else await Promise.resolve();
+      if (!alive) return;
+      setDone(merged);
+      saveDone(planKey, merged);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [planKey, plan.testerId]);
+  const progress = useMemo(() => computeProgress(plan, done), [plan, done]);
+
+  function toggle(id: string) {
+    const next = { ...done };
+    if (next[id]) delete next[id];
+    else next[id] = new Date().toISOString();
+    setDone(next);
+    saveDone(planKey, next);
+    // Un badge vient d'être gagné ? On le met en avant quelques secondes.
+    const before = new Set(progress.badges.filter((b) => b.earned).map((b) => b.key));
+    const won = computeProgress(plan, next).badges.filter((b) => b.earned && !before.has(b.key)).pop();
+    if (won) {
+      setFresh(won.key);
+      if (freshTimer.current) clearTimeout(freshTimer.current);
+      freshTimer.current = setTimeout(() => setFresh(null), 5000);
+    }
+    if (plan.testerId)
+      fetch("/api/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: plan.testerId, session: id, done: Boolean(next[id]) }),
+      }).catch(() => {});
+  }
 
   return (
     <div>
@@ -122,6 +193,17 @@ export function PlanView({ lang }: { lang: Locale }) {
         </div>
       </header>
 
+      {me?.user === null && plan.testerId && (
+        <div className="no-print mt-8 flex flex-wrap items-center justify-between gap-4 border border-klein/60 bg-klein/10 px-5 py-4">
+          <p className="text-sm text-mist">{ta.saveBanner}</p>
+          <Link href={`/${lang}/signup`} className="label border-b border-bone/50 pb-1 text-bone hover:border-bone">
+            {ta.saveCta}
+          </Link>
+        </div>
+      )}
+
+      <ProgressPanel p={progress} lang={lang} fresh={fresh} />
+
       <CalendarExport plan={plan} lang={lang} />
 
       <div className="no-print sticky top-0 z-10 -mx-4 bg-night/90 px-4 backdrop-blur sm:mx-0 sm:px-0">
@@ -135,6 +217,9 @@ export function PlanView({ lang }: { lang: Locale }) {
               }`}
             >
               {t.weekTab(wk.index)}
+              <span className="ml-2 font-mono text-[10px] text-fog">
+                {progress.weeks[i].done}/{progress.weeks[i].total}
+              </span>
             </button>
           ))}
         </div>
@@ -163,7 +248,7 @@ export function PlanView({ lang }: { lang: Locale }) {
                     </div>
                   ))}
                   {d.sessions.map((s) => (
-                    <SessionCard key={s.id} s={s} t={t} />
+                    <SessionCard key={s.id} s={s} t={t} tp={tp} done={Boolean(done[s.id])} onToggle={() => toggle(s.id)} />
                   ))}
                   {d.sessions.length === 0 && d.otherSports.length === 0 && (
                     <p className="pt-0.5 text-sm italic text-fog">{t.rest}</p>

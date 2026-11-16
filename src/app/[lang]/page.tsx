@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AccountLink } from "@/components/AccountLink";
 import { LangSwitch } from "@/components/LangSwitch";
 import { Logo } from "@/components/Logo";
 import { MotionRunner } from "@/components/MotionRunner";
@@ -56,6 +57,7 @@ function Hero({ t, lang }: { t: UI; lang: Locale }) {
         <nav className="flex items-center justify-between gap-4 py-6">
           <Logo href={`/${lang}`} />
           <div className="flex items-center gap-6">
+            <AccountLink lang={lang} />
             <LangSwitch lang={lang} />
             <Link
               href={`/${lang}/create`}

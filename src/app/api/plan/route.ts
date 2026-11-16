@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { buildPlan } from "@/lib/engine";
 import { personalize } from "@/lib/ai";
+import { currentUser } from "@/lib/auth";
 import { hashIp, recentPlansFrom, saveTester } from "@/lib/db";
 import { profileSchema } from "@/lib/types";
 
@@ -41,7 +42,9 @@ export async function POST(req: Request) {
   const testerId = crypto.randomUUID();
   let saved = false;
   try {
-    saved = await saveTester({ id: testerId, email, consentNews, profile, plan, ipHash });
+    // Connecté : le plan est rangé directement dans « Mes plans ».
+    const user = await currentUser();
+    saved = await saveTester({ id: testerId, email, consentNews, profile, plan, ipHash, userId: user?.id });
   } catch (e) {
     console.error("[RunFlow] Enregistrement du testeur impossible :", e);
   }

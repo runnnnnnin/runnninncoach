@@ -38,7 +38,9 @@ export async function GET() {
     { header: "Plan écrit par l'IA", key: "ai", width: 10 },
     { header: "Nb de retours", key: "fb", width: 10 },
     { header: "Dernière semaine notée", key: "lastWeek", width: 10 },
-    { header: "Séances faites (%)", key: "done", width: 10 },
+    { header: "Séances faites (%) selon retours", key: "done", width: 10 },
+    { header: "A un compte", key: "account", width: 10 },
+    { header: "Séances cochées", key: "checked", width: 10 },
   ];
   for (const t of testers) {
     const p = t.profile;
@@ -64,6 +66,8 @@ export async function GET() {
       fb: t.feedback_count,
       lastWeek: t.last_week ?? "",
       done: t.done_pct ?? "",
+      account: t.has_account ? "Oui" : "Non",
+      checked: t.checked,
     });
   }
 
