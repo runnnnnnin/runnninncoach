@@ -7,6 +7,7 @@ import { MotionRunner } from "@/components/MotionRunner";
 import { loadPlanRaw } from "@/lib/storage";
 import { computeProgress, loadDone, saveDone, type Done } from "@/lib/progress";
 import { CalendarExport } from "./CalendarExport";
+import { ExerciseRow } from "./ExerciseGuide";
 import { ProgressPanel } from "./ProgressPanel";
 import { StravaSync, type Details } from "./StravaSync";
 import { WeekFeedback } from "./WeekFeedback";
@@ -38,6 +39,7 @@ function SessionCard({
   onToggle,
   detail,
   via,
+  lang,
 }: {
   s: Session;
   t: UI["plan"];
@@ -46,6 +48,7 @@ function SessionCard({
   onToggle: () => void;
   detail?: { km: number; sec: number };
   via: string;
+  lang: Locale;
 }) {
   const style = KIND_STYLE[s.kind];
   return (
@@ -74,13 +77,7 @@ function SessionCard({
       {s.exercises && (
         <ul className="mt-4 border-t border-hairline text-sm">
           {s.exercises.map((e) => (
-            <li key={e.name} className="flex justify-between gap-4 border-b border-hairline py-2.5">
-              <span>
-                {e.name}
-                {e.cue && <span className="block text-xs text-fog">{e.cue}</span>}
-              </span>
-              <span className="shrink-0 font-mono text-xs text-mist">{e.dose}</span>
-            </li>
+            <ExerciseRow key={e.name} e={e} lang={lang} />
           ))}
         </ul>
       )}
@@ -299,7 +296,7 @@ function PlanBody({ plan, lang }: { plan: Plan; lang: Locale }) {
                     </div>
                   ))}
                   {d.sessions.map((s) => (
-                    <SessionCard key={s.id} s={s} t={t} tp={tp} done={Boolean(done[s.id])} onToggle={() => toggle(s.id)} detail={details[s.id]} via={ts.via} />
+                    <SessionCard key={s.id} s={s} t={t} tp={tp} done={Boolean(done[s.id])} onToggle={() => toggle(s.id)} detail={details[s.id]} via={ts.via} lang={lang} />
                   ))}
                   {d.sessions.length === 0 && d.otherSports.length === 0 && (
                     <p className="pt-0.5 text-sm italic text-fog">{t.rest}</p>
