@@ -52,7 +52,10 @@ function describePlan(plan: Plan) {
     .join("\n\n");
 }
 
+export let lastAiError: string | null = null;
+
 export async function personalize(profile: Profile, plan: Plan): Promise<Plan> {
+  lastAiError = null;
   if (!aiConfigured()) return plan;
   try {
     const { output } = await generateText({
@@ -85,6 +88,7 @@ export async function personalize(profile: Profile, plan: Plan): Promise<Plan> {
     };
   } catch (err) {
     console.error("[RunFlow] Personnalisation IA impossible, plan du moteur utilisé :", err);
+    lastAiError = (err instanceof Error ? `${err.name}: ${err.message}` : String(err)).slice(0, 300);
     return plan;
   }
 }
