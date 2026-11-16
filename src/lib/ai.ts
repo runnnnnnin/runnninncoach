@@ -7,7 +7,8 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import { DAY_LABELS, GOALS, INJURIES, LEVELS, EQUIPMENT, type Plan, type Profile } from "./types";
 
-const MODEL = process.env.RUNFLOW_MODEL ?? "anthropic/claude-sonnet-5.5";
+// Haiku : inclus dans les crédits gratuits de l'AI Gateway. Pour un modèle plus puissant, définir RUNFLOW_MODEL sur Vercel.
+const MODEL = process.env.RUNFLOW_MODEL ?? "anthropic/claude-haiku-5.5";
 
 // Sur Vercel, l'accès à l'AI Gateway se fait sans clé (jeton OIDC ajouté à chaque requête).
 // En local, il faut AI_GATEWAY_API_KEY (ou `vercel env pull`).
