@@ -35,10 +35,10 @@ function describeProfile(p: Profile) {
     : "aucun";
   return [
     `Prénom : ${p.firstName}, tranche d'âge : ${p.age}`,
-    `Objectif : ${FR.goals[p.goal]}`,
+    `Objectif principal : ${FR.goals[p.goal]}${p.otherGoals?.length ? ` (aussi : ${p.otherGoals.map((g) => FR.goals[g]).join(", ")})` : ""}`,
     `Niveau : ${FR.levels[p.level]}`,
     `Autres sports : ${sports}`,
-    `Matériel renfo : ${FR.equipment[p.equipment]}`,
+    `Matériel renfo : ${p.equipment.map((e) => FR.equipment[e]).join(", ")}`,
     `Fragilités : ${p.injuries.length ? p.injuries.map((i) => FR.injuries[i]).join(", ") : "aucune"}`,
   ].join("\n");
 }

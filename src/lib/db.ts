@@ -104,6 +104,13 @@ export async function saveFeedback(f: {
   return "ok" as const;
 }
 
+export async function getTesterPlan(id: string): Promise<Plan | null> {
+  if (!dbConfigured()) return null;
+  const s = await sql();
+  const rows = await s`SELECT plan FROM testers WHERE id = ${id}`;
+  return (rows[0]?.plan as Plan) ?? null;
+}
+
 export type TesterRow = {
   id: string;
   created_at: string;
@@ -141,5 +148,31 @@ export async function adminData() {
   const feedback = (await s`
     SELECT t.first_name, t.email, f.week, f.sessions_done, f.sessions_planned, f.feeling, f.pain, f.comment, f.created_at
     FROM feedback f JOIN testers t ON t.id = f.tester_id ORDER BY f.created_at DESC LIMIT 500`) as FeedbackRow[];
+  return { testers, feedback };
+}
+
+/** Toutes les données pour l'export Excel (inscrits avec leur profil complet + tous les retours). */
+export async function exportData() {
+  const s = await sql();
+  const testers = (await s`
+    SELECT t.id, t.created_at, t.first_name, t.email, t.consent_news, t.ai, t.profile,
+      (SELECT count(*)::int FROM feedback f WHERE f.tester_id = t.id) AS feedback_count,
+      (SELECT max(f.week)::int FROM feedback f WHERE f.tester_id = t.id) AS last_week,
+      (SELECT round(avg(f.sessions_done::numeric / nullif(f.sessions_planned, 0)) * 100)::int FROM feedback f WHERE f.tester_id = t.id) AS done_pct
+    FROM testers t ORDER BY t.created_at DESC`) as {
+    id: string;
+    created_at: string;
+    first_name: string;
+    email: string;
+    consent_news: boolean;
+    ai: boolean;
+    profile: Profile;
+    feedback_count: number;
+    last_week: number | null;
+    done_pct: number | null;
+  }[];
+  const feedback = (await s`
+    SELECT f.created_at, t.first_name, t.email, f.week, f.sessions_done, f.sessions_planned, f.feeling, f.pain, f.comment
+    FROM feedback f JOIN testers t ON t.id = f.tester_id ORDER BY f.created_at DESC`) as FeedbackRow[];
   return { testers, feedback };
 }

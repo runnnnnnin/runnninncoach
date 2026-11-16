@@ -81,6 +81,16 @@ async function AdminContent({ searchParams }: { searchParams: Promise<{ erreur?:
         <Stat label="Actifs en semaine 2+" value={week2} sub={pains ? `${pains} retour(s) avec douleur` : "aucune douleur signalée"} />
       </div>
 
+      {/* Téléchargement de fichier : un lien classique, pas une navigation de page. */}
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+      <a
+        href="/admin/export"
+        download
+        className="mt-8 inline-flex items-center gap-3 border border-hairline px-5 py-3 text-sm text-bone transition hover:border-bone/50"
+      >
+        Télécharger tout en Excel (.xlsx) <span>↓</span>
+      </a>
+
       <h2 className="serif mt-16 text-4xl">Retours</h2>
       <div className="mt-5 overflow-x-auto border border-hairline">
         <table className="w-full min-w-[720px] text-left text-sm">

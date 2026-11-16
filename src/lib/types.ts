@@ -49,13 +49,15 @@ export const profileSchema = z.object({
   firstName: z.string().trim().min(1).max(40),
   age: z.enum(AGE_KEYS),
   goal: z.enum(GOAL_KEYS),
+  /** Objectifs secondaires (le principal est `goal`). */
+  otherGoals: z.array(z.enum(GOAL_KEYS)).max(2).default([]),
   level: z.enum(LEVEL_KEYS),
   availableDays: z.array(z.enum(DAYS)).min(2).max(7),
   runsPerWeek: z.number().int().min(2).max(5),
   strengthPerWeek: z.number().int().min(0).max(3),
   maxMinutes: z.number().int().min(30).max(150),
-  otherSports: z.array(otherSportSchema).max(6),
-  equipment: z.enum(EQUIPMENT_KEYS),
+  otherSports: z.array(otherSportSchema).max(14),
+  equipment: z.array(z.enum(EQUIPMENT_KEYS)).min(1),
   injuries: z.array(z.enum(INJURY_KEYS)),
 });
 export type Profile = z.infer<typeof profileSchema>;

@@ -169,12 +169,13 @@ function longContent(t: EngineText, p: Profile, w: number) {
 function strengthExercises(t: EngineText, p: Profile, w: number): Exercise[] {
   const sets = w === 2 ? 3 : 2;
   const inj = new Set(p.injuries);
-  const heavy = p.equipment === "halteres" || p.equipment === "salle";
+  const has = (e: Profile["equipment"][number]) => p.equipment.includes(e);
+  const heavy = has("halteres") || has("salle");
   const list: Exercise[] = [];
   const ex = (key: string, dose: string, cue?: string): Exercise => ({ name: t.ex[key], dose, ...(cue ? { cue: t.cue[cue] } : {}) });
 
-  if (p.equipment === "salle") list.push(ex("legPress", `${sets} × 10`));
-  else if (p.equipment === "halteres") list.push(ex("goblet", `${sets} × 10`));
+  if (has("salle")) list.push(ex("legPress", `${sets} × 10`));
+  else if (has("halteres")) list.push(ex("goblet", `${sets} × 10`));
   else list.push(ex("squat", `${sets} × ${12 + w * 2}`, "squat"));
 
   if (inj.has("genou")) {
@@ -191,14 +192,14 @@ function strengthExercises(t: EngineText, p: Profile, w: number): Exercise[] {
   else list.push(ex("calf", `${sets} × 15`));
 
   if (inj.has("cheville")) list.push(ex("balance", `${sets} × 30 s ${t.perFoot}`));
-  if (inj.has("hanche") || p.equipment === "elastiques")
-    list.push(ex(p.equipment === "elastiques" ? "bandWalk" : "abduction", `${sets} × 12 ${t.perSide}`));
+  if (inj.has("hanche") || has("elastiques"))
+    list.push(ex(has("elastiques") ? "bandWalk" : "abduction", `${sets} × 12 ${t.perSide}`));
 
   list.push(ex("plank", `${sets} × ${30 + w * 5} s`));
   list.push(inj.has("dos") ? ex("deadBug", `${sets} × 8 ${t.perSide}`, "deadBug") : ex("sidePlank", `${sets} × 20 s ${t.perSide}`));
 
-  if (p.equipment === "salle") list.push(ex("row", `${sets} × 10`));
-  else if (p.equipment === "elastiques") list.push(ex("bandRow", `${sets} × 12`));
+  if (has("salle")) list.push(ex("row", `${sets} × 10`));
+  else if (has("elastiques")) list.push(ex("bandRow", `${sets} × 12`));
   else list.push(ex("birdDog", `${sets} × 8 ${t.perSide}`));
 
   return list;
@@ -303,7 +304,7 @@ export function buildPlan(p: Profile): Plan {
   return {
     lang,
     firstName: p.firstName,
-    goalLabel: L.goals[p.goal],
+    goalLabel: [p.goal, ...(p.otherGoals ?? []).filter((g) => g !== p.goal)].map((g) => L.goals[g]).join(" + "),
     intro: t.intro(p.firstName),
     tips: t.tips,
     warnings: [...warnings, t.warnMedical],

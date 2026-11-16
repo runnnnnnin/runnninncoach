@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { MotionRunner } from "@/components/MotionRunner";
 import { loadPlanRaw } from "@/lib/storage";
+import { CalendarExport } from "./CalendarExport";
 import { WeekFeedback } from "./WeekFeedback";
 import type { Locale } from "@/i18n/config";
 import { UI_TEXT, type UI } from "@/i18n/ui";
@@ -120,6 +121,8 @@ export function PlanView({ lang }: { lang: Locale }) {
           </Link>
         </div>
       </header>
+
+      <CalendarExport plan={plan} lang={lang} />
 
       <div className="no-print sticky top-0 z-10 -mx-4 bg-night/90 px-4 backdrop-blur sm:mx-0 sm:px-0">
         <div className="flex overflow-x-auto border-b border-hairline">

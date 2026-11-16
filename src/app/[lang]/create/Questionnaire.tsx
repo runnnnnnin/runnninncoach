@@ -15,6 +15,7 @@ import {
   LEVEL_KEYS,
   SPORT_KEYS,
   type Day,
+  type Equipment,
   type Goal,
   type Injury,
   type SportKey,
@@ -24,8 +25,9 @@ import {
   type Profile,
 } from "@/lib/types";
 
-type Draft = Omit<Profile, "goal" | "level" | "age" | "lang"> & {
-  goal?: Goal;
+type Draft = Omit<Profile, "goal" | "otherGoals" | "level" | "age" | "lang"> & {
+  /** Dans l'ordre de sélection : le premier est l'objectif principal. */
+  goals: Goal[];
   level?: Level;
   age?: Profile["age"];
   email: string;
@@ -39,8 +41,9 @@ const INITIAL: Draft = {
   runsPerWeek: 3,
   strengthPerWeek: 1,
   maxMinutes: 60,
+  goals: [],
   otherSports: [],
-  equipment: "aucun",
+  equipment: ["aucun"],
   injuries: [],
   email: "",
   consentNews: false,
@@ -129,6 +132,19 @@ export function Questionnaire({ lang }: { lang: Locale }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newSport, setNewSport] = useState<OtherSport>({ sport: "football", day: "mar", intensity: "intense", minutes: 90 });
+  const [newSportDays, setNewSportDays] = useState<Day[]>(["mar"]);
+  const toggleGoal = (g: Goal) =>
+    set("goals", d.goals.includes(g) ? d.goals.filter((x) => x !== g) : d.goals.length >= 3 ? d.goals : [...d.goals, g]);
+  const toggleEquipment = (e: Equipment) => {
+    if (e === "aucun") return set("equipment", ["aucun"]);
+    const rest = d.equipment.filter((x) => x !== "aucun");
+    const next = rest.includes(e) ? rest.filter((x) => x !== e) : [...rest, e];
+    set("equipment", next.length ? next : ["aucun"]);
+  };
+  const addSport = () => {
+    const entries = newSportDays.map((day) => ({ ...newSport, day }));
+    set("otherSports", [...d.otherSports, ...entries].slice(0, 14));
+  };
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((prev) => ({ ...prev, [k]: v }));
   const toggleDay = (day: Day) =>
@@ -167,14 +183,20 @@ export function Questionnaire({ lang }: { lang: Locale }) {
     {
       title: t.s2.title,
       subtitle: t.s2.sub,
-      valid: !!d.goal,
+      valid: d.goals.length > 0,
       body: (
-        <div className="grid gap-2.5 sm:grid-cols-2">
-          {GOAL_KEYS.map((g) => (
-            <Choice key={g} selected={d.goal === g} onClick={() => set("goal", g)}>
-              {L.goals[g]}
-            </Choice>
-          ))}
+        <div className="space-y-4">
+          <p className="text-sm text-fog">{t.s2.hint}</p>
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            {GOAL_KEYS.map((g) => (
+              <Choice key={g} selected={d.goals.includes(g)} onClick={() => toggleGoal(g)}>
+                <span className="flex items-center justify-between gap-3">
+                  {L.goals[g]}
+                  {d.goals[0] === g && <span className="label shrink-0 text-signal">{t.s2.main}</span>}
+                </span>
+              </Choice>
+            ))}
+          </div>
         </div>
       ),
     },
@@ -265,20 +287,7 @@ export function Questionnaire({ lang }: { lang: Locale }) {
                   ))}
                 </select>
               </label>
-              <label className="space-y-1 text-sm">
-                <span className="label text-fog">{t.s5.day}</span>
-                <select
-                  value={newSport.day}
-                  onChange={(e) => setNewSport({ ...newSport, day: e.target.value as Day })}
-                  className="w-full border border-hairline bg-asphalt px-3 py-2.5 text-bone"
-                >
-                  {DAYS.map((day) => (
-                    <option key={day} value={day}>
-                      {L.days[day]}
-                    </option>
-                  ))}
-                </select>
-              </label>
+
               <label className="space-y-1 text-sm">
                 <span className="label text-fog">{t.s5.intensity}</span>
                 <select
@@ -308,10 +317,26 @@ export function Questionnaire({ lang }: { lang: Locale }) {
                 </select>
               </label>
             </div>
+            <div className="space-y-2 text-sm">
+              <span className="label text-fog">{t.s5.days}</span>
+              <div className="flex flex-wrap gap-2">
+                {DAYS.map((day) => (
+                  <Chip
+                    key={day}
+                    selected={newSportDays.includes(day)}
+                    onClick={() =>
+                      setNewSportDays(newSportDays.includes(day) ? newSportDays.filter((x) => x !== day) : [...newSportDays, day])
+                    }
+                  >
+                    {L.daysShort[day]}
+                  </Chip>
+                ))}
+              </div>
+            </div>
             <button
               type="button"
-              disabled={d.otherSports.length >= 6}
-              onClick={() => set("otherSports", [...d.otherSports, newSport])}
+              disabled={newSportDays.length === 0 || d.otherSports.length >= 14}
+              onClick={addSport}
               className="w-full border border-bone/60 px-5 py-3 text-sm text-bone transition hover:bg-bone hover:text-ink disabled:opacity-30"
             >
               {t.s5.add}
@@ -327,10 +352,10 @@ export function Questionnaire({ lang }: { lang: Locale }) {
       valid: true,
       body: (
         <div className="space-y-8">
-          <Field label={t.s6.equipment}>
+          <Field label={t.s6.equipment} hint={t.s6.equipmentHint}>
             <div className="grid gap-2.5 sm:grid-cols-2">
               {EQUIPMENT_KEYS.map((e) => (
-                <Choice key={e} selected={d.equipment === e} onClick={() => set("equipment", e)}>
+                <Choice key={e} selected={d.equipment.includes(e)} onClick={() => toggleEquipment(e)}>
                   {L.equipment[e]}
                 </Choice>
               ))}
@@ -406,7 +431,7 @@ export function Questionnaire({ lang }: { lang: Locale }) {
       const res = await fetch("/api/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...d, lang }),
+        body: JSON.stringify({ ...d, goals: undefined, goal: d.goals[0], otherGoals: d.goals.slice(1), lang }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? t.errorGeneric);
