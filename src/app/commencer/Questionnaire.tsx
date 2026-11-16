@@ -363,7 +363,7 @@ export function Questionnaire() {
       <div className="flex flex-col items-center py-24 text-center">
         <div className="h-px w-40 overflow-hidden bg-hairline"><div className="h-px w-1/3 animate-[streak_1.2s_ease-in-out_infinite_alternate] bg-bone" /></div>
         <p className="serif mt-10 text-4xl">{d.firstName}, ton coach prépare ton plan…</p>
-        <p className="mt-3 text-fog">On place chaque séance autour de ta semaine et ton coach t'écrit ses conseils. Compte une quinzaine de secondes.</p>
+        <p className="mt-3 text-fog">On place chaque séance autour de ta semaine et ton coach t&apos;écrit ses conseils. Compte une quinzaine de secondes.</p>
       </div>
     );
   }
