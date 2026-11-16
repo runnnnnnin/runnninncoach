@@ -4,7 +4,10 @@ import { Suspense } from "react";
 import { Logo } from "@/components/Logo";
 import { ADMIN_COOKIE, adminPasswordSet, adminToken, safeEqual } from "@/lib/admin-auth";
 import { adminData, dbConfigured } from "@/lib/db";
-import { GOALS, LEVELS, type Goal, type Level } from "@/lib/types";
+import { LABELS } from "@/lib/labels";
+import type { Goal, Level, SportKey } from "@/lib/types";
+
+const FR = LABELS.fr;
 import { login, logout } from "./actions";
 
 export const metadata: Metadata = { title: "Admin · RunFlow", robots: { index: false, follow: false } };
@@ -123,7 +126,7 @@ async function AdminContent({ searchParams }: { searchParams: Promise<{ erreur?:
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="label text-fog">
             <tr className="border-b border-hairline">
-              {["Date", "Testeur", "Objectif", "Niveau", "Autres sports", "Retours", "IA"].map((h) => (
+              {["Date", "Testeur", "Langue", "Objectif", "Niveau", "Autres sports", "Retours", "IA"].map((h) => (
                 <th key={h} className="px-4 py-3 font-normal">
                   {h}
                 </th>
@@ -133,7 +136,7 @@ async function AdminContent({ searchParams }: { searchParams: Promise<{ erreur?:
           <tbody>
             {testers.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-fog">
+                <td colSpan={8} className="px-4 py-6 text-fog">
                   Pas encore d&apos;inscrit.
                 </td>
               </tr>
@@ -148,9 +151,12 @@ async function AdminContent({ searchParams }: { searchParams: Promise<{ erreur?:
                     {t.consent_news ? " · nouvelles ✓" : ""}
                   </span>
                 </td>
-                <td className="px-4 py-3">{GOALS[t.goal as Goal] ?? t.goal}</td>
-                <td className="px-4 py-3">{LEVELS[t.level as Level] ?? t.level}</td>
-                <td className="px-4 py-3 text-mist">{t.other_sports ?? "—"}</td>
+                <td className="px-4 py-3 uppercase">{t.lang}</td>
+                <td className="px-4 py-3">{FR.goals[t.goal as Goal] ?? t.goal}</td>
+                <td className="px-4 py-3">{FR.levels[t.level as Level] ?? t.level}</td>
+                <td className="px-4 py-3 text-mist">
+                  {t.other_sports ? t.other_sports.split(", ").map((x) => FR.sports[x as SportKey] ?? x).join(", ") : "—"}
+                </td>
                 <td className="px-4 py-3 font-mono">{t.feedback_count}</td>
                 <td className="px-4 py-3">{t.ai ? "✓" : "—"}</td>
               </tr>

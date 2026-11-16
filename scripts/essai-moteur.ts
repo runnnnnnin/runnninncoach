@@ -1,11 +1,11 @@
 import { buildPlan } from "../src/lib/engine";
 import type { Profile } from "../src/lib/types";
 const profiles: Profile[] = [
-  { firstName: "Léa", age: "25-34", goal: "10k", level: "regulier", availableDays: ["lun","mer","jeu","sam","dim"], runsPerWeek: 3, strengthPerWeek: 2, maxMinutes: 75,
-    otherSports: [{ sport: "Football", day: "mar", intensity: "intense", minutes: 90 }, { sport: "Padel", day: "sam", intensity: "modere", minutes: 90 }], equipment: "aucun", injuries: ["genou"] },
-  { firstName: "Tom", age: "45-54", goal: "5k", level: "debutant", availableDays: ["mar","jeu","sam"], runsPerWeek: 4, strengthPerWeek: 1, maxMinutes: 45, otherSports: [], equipment: "elastiques", injuries: [] },
-  { firstName: "Max", age: "35-44", goal: "marathon", level: "confirme", availableDays: ["lun","mar","mer","jeu","ven","sam","dim"], runsPerWeek: 5, strengthPerWeek: 2, maxMinutes: 120,
-    otherSports: [{ sport: "Vélo", day: "mer", intensity: "intense", minutes: 120 }], equipment: "salle", injuries: ["achille"] },
+  { lang: "fr", firstName: "Léa", age: "25-34", goal: "10k", level: "regulier", availableDays: ["lun","mer","jeu","sam","dim"], runsPerWeek: 3, strengthPerWeek: 2, maxMinutes: 75,
+    otherSports: [{ sport: "football", day: "mar", intensity: "intense", minutes: 90 }, { sport: "padel", day: "sam", intensity: "modere", minutes: 90 }], equipment: "aucun", injuries: ["genou"] },
+  { lang: "en", firstName: "Tom", age: "45-54", goal: "5k", level: "debutant", availableDays: ["mar","jeu","sam"], runsPerWeek: 4, strengthPerWeek: 1, maxMinutes: 45, otherSports: [], equipment: "elastiques", injuries: [] },
+  { lang: "en", firstName: "Max", age: "35-44", goal: "marathon", level: "confirme", availableDays: ["lun","mar","mer","jeu","ven","sam","dim"], runsPerWeek: 5, strengthPerWeek: 2, maxMinutes: 120,
+    otherSports: [{ sport: "velo", day: "mer", intensity: "intense", minutes: 120 }], equipment: "salle", injuries: ["achille"] },
 ];
 for (const p of profiles) {
   const plan = buildPlan(p);

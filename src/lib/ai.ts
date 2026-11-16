@@ -5,7 +5,12 @@
  */
 import { generateText, Output } from "ai";
 import { z } from "zod";
-import { DAY_LABELS, GOALS, INJURIES, LEVELS, EQUIPMENT, type Plan, type Profile } from "./types";
+import { LABELS, sportLabel } from "./labels";
+import type { Plan, Profile } from "./types";
+
+// Le contexte envoyé à l'IA est en français ; la langue de SA réponse suit celle choisie par l'utilisateur.
+const FR = LABELS.fr;
+const DAY_LABELS = FR.days;
 
 // Haiku : inclus dans les crédits gratuits de l'AI Gateway. Pour un modèle plus puissant, définir RUNFLOW_MODEL sur Vercel.
 const MODEL = process.env.RUNFLOW_MODEL ?? "anthropic/claude-haiku-5.5";
@@ -26,15 +31,15 @@ const outputSchema = z.object({
 
 function describeProfile(p: Profile) {
   const sports = p.otherSports.length
-    ? p.otherSports.map((s) => `${s.sport} le ${DAY_LABELS[s.day].toLowerCase()} (${s.intensity}, ${s.minutes} min)`).join(" ; ")
+    ? p.otherSports.map((s) => `${sportLabel("fr", s.sport)} le ${DAY_LABELS[s.day].toLowerCase()} (${s.intensity}, ${s.minutes} min)`).join(" ; ")
     : "aucun";
   return [
     `Prénom : ${p.firstName}, tranche d'âge : ${p.age}`,
-    `Objectif : ${GOALS[p.goal]}`,
-    `Niveau : ${LEVELS[p.level]}`,
+    `Objectif : ${FR.goals[p.goal]}`,
+    `Niveau : ${FR.levels[p.level]}`,
     `Autres sports : ${sports}`,
-    `Matériel renfo : ${EQUIPMENT[p.equipment]}`,
-    `Fragilités : ${p.injuries.length ? p.injuries.map((i) => INJURIES[i]).join(", ") : "aucune"}`,
+    `Matériel renfo : ${FR.equipment[p.equipment]}`,
+    `Fragilités : ${p.injuries.length ? p.injuries.map((i) => FR.injuries[i]).join(", ") : "aucune"}`,
   ].join("\n");
 }
 
@@ -46,7 +51,7 @@ function describePlan(plan: Plan) {
         w.days
           .flatMap((d) => [
             ...d.sessions.map((s) => `- id=${s.id} | ${DAY_LABELS[d.day]} | ${s.title} | ${s.minutes} min${s.coachNote ? ` | note moteur : ${s.coachNote}` : ""}`),
-            ...d.otherSports.map((o) => `- ${DAY_LABELS[d.day]} | (autre sport) ${o.sport}, ${o.intensity}`),
+            ...d.otherSports.map((o) => `- ${DAY_LABELS[d.day]} | (autre sport) ${sportLabel("fr", o.sport)}, ${o.intensity}`),
           ])
           .join("\n"),
     )
@@ -62,7 +67,10 @@ export async function personalize(profile: Profile, plan: Plan): Promise<Plan> {
       output: Output.object({ schema: outputSchema }),
       system:
         "Tu es le coach de RunFlow, une app de course à pied + renforcement qui tient compte des autres sports pratiqués. " +
-        "Tu écris en français, tu tutoies, ton ton est chaleureux, positif et concret, sans jargon inutile. " +
+        (profile.lang === "en"
+          ? "Tu écris TOUTE ta réponse en anglais (friendly, second person, casual 'you'), même si le contexte est en français. "
+          : "Tu écris en français, tu tutoies. ") +
+        "Ton ton est chaleureux, positif et concret, sans jargon inutile. " +
         "Le plan t'est fourni déjà construit : tu ne modifies JAMAIS les jours, durées, intensités ni le nombre de séances, " +
         "et tu ne proposes jamais d'en faire plus. Tu expliques le pourquoi des choix (notamment le lien avec les autres sports) " +
         "et tu donnes envie de s'y tenir. Pas de conseil médical : en cas de douleur, on recommande de consulter.",

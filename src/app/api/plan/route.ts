@@ -12,11 +12,17 @@ const requestSchema = profileSchema.extend({
 
 const MAX_PLANS_PER_HOUR = 5;
 
+const ERRORS = {
+  en: { invalid: "Some answers are missing or invalid (check your email).", tooMany: "You've already created several plans this hour. Please try again a bit later." },
+  fr: { invalid: "Certaines réponses sont manquantes ou invalides (vérifie ton email).", tooMany: "Tu as déjà créé plusieurs plans cette heure-ci. Réessaie un peu plus tard." },
+};
+
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const parsed = requestSchema.safeParse(body);
+  const err = ERRORS[body?.lang === "fr" ? "fr" : "en"];
   if (!parsed.success) {
-    return Response.json({ error: "Certaines réponses sont manquantes ou invalides (vérifie ton email)." }, { status: 400 });
+    return Response.json({ error: err.invalid }, { status: 400 });
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { email, consentNews, website, ...profile } = parsed.data;
@@ -25,7 +31,7 @@ export async function POST(req: Request) {
   const ipHash = hashIp(ip);
   try {
     if ((await recentPlansFrom(ipHash)) >= MAX_PLANS_PER_HOUR) {
-      return Response.json({ error: "Tu as déjà créé plusieurs plans cette heure-ci. Réessaie un peu plus tard." }, { status: 429 });
+      return Response.json({ error: err.tooMany }, { status: 429 });
     }
   } catch (e) {
     console.error("[RunFlow] Vérification anti-abus impossible :", e);

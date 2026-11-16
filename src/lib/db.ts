@@ -113,6 +113,7 @@ export type TesterRow = {
   goal: string;
   level: string;
   ai: boolean;
+  lang: string;
   other_sports: string | null;
   feedback_count: number;
 };
@@ -133,6 +134,7 @@ export async function adminData() {
   const s = await sql();
   const testers = (await s`
     SELECT t.id, t.created_at, t.first_name, t.email, t.consent_news, t.goal, t.level, t.ai,
+      coalesce(t.profile->>'lang', 'fr') AS lang,
       (SELECT string_agg(x->>'sport', ', ') FROM jsonb_array_elements(t.profile->'otherSports') x) AS other_sports,
       (SELECT count(*)::int FROM feedback f WHERE f.tester_id = t.id) AS feedback_count
     FROM testers t ORDER BY t.created_at DESC LIMIT 500`) as TesterRow[];
