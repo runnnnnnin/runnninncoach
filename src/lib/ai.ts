@@ -9,7 +9,10 @@ import { DAY_LABELS, GOALS, INJURIES, LEVELS, EQUIPMENT, type Plan, type Profile
 
 const MODEL = process.env.RUNFLOW_MODEL ?? "anthropic/claude-sonnet-5.5";
 
-export const aiConfigured = () => Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);
+// Sur Vercel, l'accès à l'AI Gateway se fait sans clé (jeton OIDC ajouté à chaque requête).
+// En local, il faut AI_GATEWAY_API_KEY (ou `vercel env pull`).
+export const aiConfigured = () =>
+  Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN || process.env.VERCEL);
 
 const outputSchema = z.object({
   intro: z.string().describe("Message d'accueil du coach, 2 à 4 phrases, tutoiement, motivant et concret"),
