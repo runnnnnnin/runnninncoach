@@ -8,6 +8,7 @@ import { loadPlanRaw } from "@/lib/storage";
 import { computeProgress, loadDone, saveDone, type Done } from "@/lib/progress";
 import { CalendarExport } from "./CalendarExport";
 import { ProgressPanel } from "./ProgressPanel";
+import { StravaSync, type Details } from "./StravaSync";
 import { WeekFeedback } from "./WeekFeedback";
 import type { Locale } from "@/i18n/config";
 import { UI_TEXT, type UI } from "@/i18n/ui";
@@ -22,7 +23,30 @@ const KIND_STYLE: Record<SessionKind, { dot: string; label: "run" | "key" | "str
   renfo: { dot: "bg-klein", label: "strength" },
 };
 
-function SessionCard({ s, t, tp, done, onToggle }: { s: Session; t: UI["plan"]; tp: UI["prog"]; done: boolean; onToggle: () => void }) {
+/** 38:12 et 6:10/km à partir d'une durée et d'une distance. */
+function stravaLine(d: { km: number; sec: number }) {
+  const clock = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, "0")}`;
+  const parts = [d.km > 0 ? `${d.km.toFixed(1)} km` : null, clock(d.sec), d.km > 0.2 ? `${clock(d.sec / d.km)}/km` : null];
+  return parts.filter(Boolean).join(" · ");
+}
+
+function SessionCard({
+  s,
+  t,
+  tp,
+  done,
+  onToggle,
+  detail,
+  via,
+}: {
+  s: Session;
+  t: UI["plan"];
+  tp: UI["prog"];
+  done: boolean;
+  onToggle: () => void;
+  detail?: { km: number; sec: number };
+  via: string;
+}) {
   const style = KIND_STYLE[s.kind];
   return (
     <div className={`print-break border bg-asphalt/70 p-5 transition ${done ? "border-bone/40" : "border-hairline"}`}>
@@ -81,6 +105,11 @@ function SessionCard({ s, t, tp, done, onToggle }: { s: Session; t: UI["plan"]; 
         </span>
         {done ? tp.marked : tp.mark}
       </button>
+      {done && detail && (
+        <p className="no-print mt-3 font-mono text-xs text-mist">
+          <span style={{ color: "#fc4c02" }}>{via}</span> · {stravaLine(detail)}
+        </p>
+      )}
     </div>
   );
 }
@@ -119,6 +148,7 @@ function PlanBody({ plan, lang }: { plan: Plan; lang: Locale }) {
   const t = UI_TEXT[lang].plan;
   const ta = UI_TEXT[lang].account;
   const tp = UI_TEXT[lang].prog;
+  const ts = UI_TEXT[lang].strava;
   const L = LABELS[lang];
   const me = useMe();
   const [week, setWeek] = useState(0);
@@ -126,6 +156,8 @@ function PlanBody({ plan, lang }: { plan: Plan; lang: Locale }) {
   // Séances cochées : gardées dans le navigateur, et sur le serveur quand le plan y est enregistré.
   const planKey = plan.testerId ?? plan.createdAt;
   const [done, setDone] = useState<Done>({});
+  const [details, setDetails] = useState<Details>({});
+  const [start, setStart] = useState<string | null | undefined>(undefined);
   const [fresh, setFresh] = useState<string | null>(null);
   const freshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -134,9 +166,14 @@ function PlanBody({ plan, lang }: { plan: Plan; lang: Locale }) {
       let merged = loadDone(planKey);
       if (plan.testerId) {
         const remote = await fetch(`/api/progress?plan=${plan.testerId}`)
-          .then((r) => (r.ok ? (r.json() as Promise<{ done: Done }>) : null))
+          .then((r) => (r.ok ? (r.json() as Promise<{ done: Done; details?: Details; start?: string | null }>) : null))
           .catch(() => null);
-        if (remote) merged = remote.done;
+        if (!alive) return;
+        if (remote) {
+          merged = remote.done;
+          setDetails(remote.details ?? {});
+        }
+        setStart(remote?.start ?? null);
       } else await Promise.resolve();
       if (!alive) return;
       setDone(merged);
@@ -204,6 +241,20 @@ function PlanBody({ plan, lang }: { plan: Plan; lang: Locale }) {
 
       <ProgressPanel p={progress} lang={lang} fresh={fresh} />
 
+      {me?.strava?.connected && plan.testerId && start !== undefined && (
+        <StravaSync
+          planId={plan.testerId}
+          lang={lang}
+          start={start}
+          onSynced={(r) => {
+            setDone(r.done);
+            saveDone(planKey, r.done);
+            setDetails(r.details);
+            setStart(r.start);
+          }}
+        />
+      )}
+
       <CalendarExport plan={plan} lang={lang} />
 
       <div className="no-print sticky top-0 z-10 -mx-4 bg-night/90 px-4 backdrop-blur sm:mx-0 sm:px-0">
@@ -248,7 +299,7 @@ function PlanBody({ plan, lang }: { plan: Plan; lang: Locale }) {
                     </div>
                   ))}
                   {d.sessions.map((s) => (
-                    <SessionCard key={s.id} s={s} t={t} tp={tp} done={Boolean(done[s.id])} onToggle={() => toggle(s.id)} />
+                    <SessionCard key={s.id} s={s} t={t} tp={tp} done={Boolean(done[s.id])} onToggle={() => toggle(s.id)} detail={details[s.id]} via={ts.via} />
                   ))}
                   {d.sessions.length === 0 && d.otherSports.length === 0 && (
                     <p className="pt-0.5 text-sm italic text-fog">{t.rest}</p>

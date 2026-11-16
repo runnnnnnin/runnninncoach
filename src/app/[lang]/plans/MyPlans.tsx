@@ -9,14 +9,23 @@ import { savePlan } from "@/lib/storage";
 import type { Plan } from "@/lib/types";
 
 type Summary = { id: string; created_at: string; goal_label: string; lang: string; total: number; done: number };
-type Data = { user: { email: string; firstName: string | null } | null; plans?: Summary[] };
+type Data = { user: { email: string; firstName: string | null } | null; plans?: Summary[]; strava?: { available: boolean; connected: boolean } };
 
 /** « Mes plans » : la liste des plans du compte, avec la progression de chacun. */
 export function MyPlans({ lang }: { lang: Locale }) {
   const t = UI_TEXT[lang].account;
+  const ts = UI_TEXT[lang].strava;
   const router = useRouter();
   const [data, setData] = useState<Data | undefined>(undefined);
   const [busy, setBusy] = useState<string | null>(null);
+  // Message au retour de Strava (?strava=connected, denied…).
+  const [notice, setNotice] = useState<string | null>(null);
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("strava");
+    if (!code) return;
+    window.history.replaceState(null, "", window.location.pathname);
+    Promise.resolve().then(() => setNotice(code));
+  }, []);
 
   const load = useCallback(
     () =>
@@ -51,6 +60,13 @@ export function MyPlans({ lang }: { lang: Locale }) {
     await fetch(`/api/plans/${id}`, { method: "DELETE" }).catch(() => {});
     await load();
     setBusy(null);
+  }
+
+  async function disconnectStrava() {
+    if (!window.confirm(ts.disconnectConfirm)) return;
+    await fetch("/api/strava/disconnect", { method: "POST" }).catch(() => {});
+    setNotice(null);
+    await load();
   }
 
   async function logout() {
@@ -112,6 +128,44 @@ export function MyPlans({ lang }: { lang: Locale }) {
       <Link href={`/${lang}/create`} className="mt-10 inline-flex items-center gap-6 bg-klein px-7 py-4 text-sm font-medium text-bone hover:brightness-110">
         {t.create} <span>→</span>
       </Link>
+
+      <section className="mt-16">
+        <h2 className="serif text-4xl leading-none">{ts.connections}</h2>
+        <p className="mt-3 text-sm text-mist/75">{ts.connectionsSub}</p>
+        {notice && ts.msg[notice] && (
+          <p role="status" className={`mt-5 border-l-2 pl-3 text-sm ${notice === "connected" ? "border-bone text-bone" : "border-signal text-signal"}`}>
+            {ts.msg[notice]}
+          </p>
+        )}
+        <ul className="mt-6 border-t border-hairline">
+          <li className="flex flex-wrap items-center justify-between gap-4 border-b border-hairline py-4">
+            <span className="serif text-2xl">Strava</span>
+            {!data.strava?.available ? (
+              <span className="label text-fog">{ts.soon}</span>
+            ) : data.strava.connected ? (
+              <span className="flex items-center gap-5">
+                <span className="label flex items-center gap-2 text-bone">
+                  <span className="h-1.5 w-1.5 rounded-full bg-signal" />
+                  {ts.connected}
+                </span>
+                <button onClick={disconnectStrava} className="label text-fog hover:text-signal">
+                  {ts.disconnect}
+                </button>
+              </span>
+            ) : (
+              <a href={`/api/strava/connect?lang=${lang}`} className="px-5 py-3 text-sm font-medium text-white hover:brightness-110" style={{ background: "#fc4c02" }}>
+                {ts.connect}
+              </a>
+            )}
+          </li>
+          {["Garmin", "Coros"].map((name) => (
+            <li key={name} className="flex items-center justify-between gap-4 border-b border-hairline py-4">
+              <span className="serif text-2xl text-fog">{name}</span>
+              <span className="label text-fog">{ts.soon}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <div className="mt-16 flex flex-wrap gap-6 border-t border-hairline pt-6">
         <button onClick={logout} className="label text-mist hover:text-bone">

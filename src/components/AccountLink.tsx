@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import type { Locale } from "@/i18n/config";
 import { UI_TEXT } from "@/i18n/ui";
 
-export type Me = { user: { email: string; firstName: string | null } | null };
+export type Me = { user: { email: string; firstName: string | null } | null; strava?: { available: boolean; connected: boolean } };
 
 /** Qui est connecté ? `undefined` tant qu'on ne sait pas. */
 export function useMe() {

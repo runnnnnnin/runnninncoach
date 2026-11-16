@@ -68,6 +68,18 @@ async function sql() {
       )`;
       await s`CREATE TABLE IF NOT EXISTS auth_attempts (ip_hash text NOT NULL, at timestamptz NOT NULL DEFAULT now())`;
       await s`CREATE INDEX IF NOT EXISTS auth_attempts_ip ON auth_attempts (ip_hash, at)`;
+      // Strava : jetons chiffrés par compte, activité associée à une séance cochée, lundi de départ du plan.
+      await s`CREATE TABLE IF NOT EXISTS strava_accounts (
+        user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        athlete_id bigint NOT NULL,
+        access_token text NOT NULL,
+        refresh_token text NOT NULL,
+        expires_at bigint NOT NULL,
+        last_sync_at timestamptz,
+        connected_at timestamptz NOT NULL DEFAULT now()
+      )`;
+      await s`ALTER TABLE completions ADD COLUMN IF NOT EXISTS activity_id bigint, ADD COLUMN IF NOT EXISTS distance_m int, ADD COLUMN IF NOT EXISTS moving_s int`;
+      await s`ALTER TABLE testers ADD COLUMN IF NOT EXISTS start_date date`;
     })().catch((e) => {
       _ready = null;
       throw e;
@@ -294,10 +306,20 @@ export async function deletePlan(testerId: string, userId: string) {
 
 /* ---------- Séances cochées ---------- */
 
-export async function completionsOf(testerId: string) {
+export type SessionDetail = { km: number; sec: number };
+
+/** Séances cochées d'un plan, détails Strava éventuels, et lundi de départ s'il a été choisi. */
+export async function progressOf(testerId: string) {
   const s = await sql();
-  const rows = await s`SELECT session_id, done_at FROM completions WHERE tester_id = ${testerId}`;
-  return Object.fromEntries(rows.map((r) => [r.session_id as string, new Date(r.done_at as string).toISOString()]));
+  const rows = await s`SELECT session_id, done_at, distance_m, moving_s FROM completions WHERE tester_id = ${testerId}`;
+  const meta = await s`SELECT to_char(start_date, 'YYYY-MM-DD') AS start FROM testers WHERE id = ${testerId}`;
+  const done: Record<string, string> = {};
+  const details: Record<string, SessionDetail> = {};
+  for (const r of rows) {
+    done[r.session_id as string] = new Date(r.done_at as string).toISOString();
+    if (r.moving_s != null) details[r.session_id as string] = { km: Math.round(((r.distance_m as number) ?? 0) / 10) / 100, sec: r.moving_s as number };
+  }
+  return { done, details, start: (meta[0]?.start as string | null) ?? null };
 }
 
 export async function setCompletion(testerId: string, sessionId: string, done: boolean) {
@@ -309,4 +331,59 @@ export async function setCompletion(testerId: string, sessionId: string, done: b
   if (done) await s`INSERT INTO completions (tester_id, session_id) VALUES (${testerId}, ${sessionId}) ON CONFLICT DO NOTHING`;
   else await s`DELETE FROM completions WHERE tester_id = ${testerId} AND session_id = ${sessionId}`;
   return true;
+}
+
+/* ---------- Strava ---------- */
+
+export type StravaAccount = { user_id: string; athlete_id: string; access_token: string; refresh_token: string; expires_at: string; recently_synced: boolean };
+
+export async function saveStrava(a: { userId: string; athleteId: number; accessToken: string; refreshToken: string; expiresAt: number }) {
+  const s = await sql();
+  await s`INSERT INTO strava_accounts (user_id, athlete_id, access_token, refresh_token, expires_at)
+    VALUES (${a.userId}, ${a.athleteId}, ${a.accessToken}, ${a.refreshToken}, ${a.expiresAt})
+    ON CONFLICT (user_id) DO UPDATE SET athlete_id = EXCLUDED.athlete_id, access_token = EXCLUDED.access_token,
+      refresh_token = EXCLUDED.refresh_token, expires_at = EXCLUDED.expires_at`;
+}
+
+export async function getStrava(userId: string) {
+  const s = await sql();
+  const rows = await s`SELECT user_id, athlete_id, access_token, refresh_token, expires_at,
+    coalesce(last_sync_at > now() - interval '10 minutes', false) AS recently_synced FROM strava_accounts WHERE user_id = ${userId}`;
+  return (rows[0] as StravaAccount | undefined) ?? null;
+}
+
+export async function stravaConnected(userId: string) {
+  const s = await sql();
+  return (await s`SELECT 1 FROM strava_accounts WHERE user_id = ${userId}`).length > 0;
+}
+
+export async function markStravaSync(userId: string) {
+  const s = await sql();
+  await s`UPDATE strava_accounts SET last_sync_at = now() WHERE user_id = ${userId}`;
+}
+
+/** Déconnexion : on oublie les jetons et toutes les données venues de Strava (les séances restent cochées). */
+export async function deleteStrava(userId: string) {
+  const s = await sql();
+  await s`UPDATE completions SET activity_id = NULL, distance_m = NULL, moving_s = NULL
+    WHERE tester_id IN (SELECT id FROM testers WHERE user_id = ${userId})`;
+  await s`DELETE FROM strava_accounts WHERE user_id = ${userId}`;
+}
+
+/** Le plan d'un compte avec son lundi de départ ; `start` fourni = on l'enregistre. */
+export async function planForSync(testerId: string, userId: string, start: string | null) {
+  const s = await sql();
+  if (start) await s`UPDATE testers SET start_date = ${start}::date WHERE id = ${testerId} AND user_id = ${userId}`;
+  const rows = await s`SELECT plan, to_char(start_date, 'YYYY-MM-DD') AS start FROM testers WHERE id = ${testerId} AND user_id = ${userId}`;
+  if (!rows[0]) return null;
+  const used = await s`SELECT activity_id FROM completions WHERE tester_id = ${testerId} AND activity_id IS NOT NULL`;
+  return { plan: rows[0].plan as Plan, start: (rows[0].start as string | null) ?? null, used: used.map((r) => Number(r.activity_id)) };
+}
+
+export async function saveStravaMatch(testerId: string, m: { sessionId: string; activityId: number; distanceM: number; movingS: number }) {
+  const s = await sql();
+  await s`INSERT INTO completions (tester_id, session_id, activity_id, distance_m, moving_s)
+    VALUES (${testerId}, ${m.sessionId}, ${m.activityId}, ${m.distanceM}, ${m.movingS})
+    ON CONFLICT (tester_id, session_id) DO UPDATE SET activity_id = EXCLUDED.activity_id,
+      distance_m = EXCLUDED.distance_m, moving_s = EXCLUDED.moving_s`;
 }

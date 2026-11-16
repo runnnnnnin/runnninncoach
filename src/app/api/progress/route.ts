@@ -1,14 +1,14 @@
 import { z } from "zod";
-import { completionsOf, dbConfigured, setCompletion } from "@/lib/db";
+import { dbConfigured, progressOf, setCompletion } from "@/lib/db";
 
 // Séances cochées d'un plan. L'identifiant du plan (introuvable au hasard) sert de clé d'accès,
 // comme pour le calendrier : ça marche avec ou sans compte.
 export async function GET(req: Request) {
   const id = new URL(req.url).searchParams.get("plan");
   if (!z.string().uuid().safeParse(id).success) return Response.json({ error: "invalid" }, { status: 400 });
-  if (!dbConfigured()) return Response.json({ done: {} });
-  const done = await completionsOf(id!).catch(() => ({}));
-  return Response.json({ done }, { headers: { "Cache-Control": "no-store" } });
+  if (!dbConfigured()) return Response.json({ done: {}, details: {}, start: null });
+  const progress = await progressOf(id!).catch(() => ({ done: {}, details: {}, start: null }));
+  return Response.json(progress, { headers: { "Cache-Control": "no-store" } });
 }
 
 const schema = z.object({
