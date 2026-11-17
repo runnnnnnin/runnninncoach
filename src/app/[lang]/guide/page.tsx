@@ -38,6 +38,7 @@ const TEXT = {
       ["Your plan", "A blank week to fill in, plus a checklist"],
     ],
     previewK: "A look inside",
+    previewNote: "The rest is in the guide.",
     forK: "Who it's for",
     forList: [
       "You run (or want to start) and want to understand what you're doing, not just follow numbers.",
@@ -74,6 +75,7 @@ const TEXT = {
       ["Ton plan", "Une semaine vierge à remplir et une checklist"],
     ],
     previewK: "Un aperçu",
+    previewNote: "La suite est dans le guide.",
     forK: "Pour qui",
     forList: [
       "Tu cours (ou tu veux t'y mettre) et tu veux comprendre ce que tu fais, pas juste suivre des chiffres.",
@@ -184,15 +186,16 @@ export default async function GuidePage({ params }: PageProps<"/[lang]/guide">) 
             {["runs", "week", "plan"].map((p) => (
               <Image
                 key={p}
-                src={`/guide/${p}.jpg`}
+                src={`/guide/preview-${p}.jpg`}
                 alt=""
-                width={900}
-                height={1273}
+                width={600}
+                height={849}
                 sizes="(min-width: 1152px) 22rem, 31vw"
                 className="h-auto w-full"
               />
             ))}
           </div>
+          <p className="label mt-8 text-center text-fog">{t.previewNote}</p>
         </div>
       </section>
 
