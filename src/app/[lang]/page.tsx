@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AccountLink } from "@/components/AccountLink";
@@ -8,7 +9,7 @@ import { MotionRunner } from "@/components/MotionRunner";
 import { hasLocale, type Locale } from "@/i18n/config";
 import { UI_TEXT, type UI } from "@/i18n/ui";
 import { LABELS } from "@/lib/labels";
-import { BRAND } from "@/lib/brand";
+import { BRAND, EBOOK } from "@/lib/brand";
 import { DAYS } from "@/lib/types";
 
 const WEEK_KINDS = [
@@ -56,7 +57,10 @@ function Hero({ t, lang }: { t: UI; lang: Locale }) {
       <div className="mx-auto flex min-h-[100svh] max-w-6xl flex-col px-4 sm:px-8">
         <nav className="flex items-center justify-between gap-4 py-6">
           <Logo href={`/${lang}`} />
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-5 sm:gap-6">
+            <Link href={`/${lang}/guide`} className="label text-signal transition hover:text-bone">
+              {t.guide.nav}
+            </Link>
             <AccountLink lang={lang} />
             <LangSwitch lang={lang} />
             <Link
@@ -69,6 +73,14 @@ function Hero({ t, lang }: { t: UI; lang: Locale }) {
         </nav>
 
         <div className="flex flex-1 flex-col justify-center pb-40 pt-10">
+          <Link
+            href={`/${lang}/guide`}
+            className="group mb-8 inline-flex w-fit items-center gap-3 border border-hairline bg-night/40 px-3.5 py-2 text-xs text-mist transition hover:border-bone/40 hover:text-bone"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-signal" />
+            {t.guide.pill}
+            <span className="transition group-hover:translate-x-0.5">→</span>
+          </Link>
           <p className="label text-fog">{t.hero.kicker}</p>
           <h1 className="serif mt-6 max-w-4xl text-[3.2rem] leading-[0.95] sm:text-[6.2rem]">
             {t.hero.title1}
@@ -99,6 +111,45 @@ function Manifesto({ t }: { t: UI }) {
         <p className="serif text-3xl leading-[1.15] text-bone sm:text-5xl">
           {t.manifesto.a} <span className="text-fog">{t.manifesto.b}</span> <em>{t.manifesto.c}</em>
         </p>
+      </div>
+    </section>
+  );
+}
+
+function GuideSection({ t, lang }: { t: UI; lang: Locale }) {
+  return (
+    <section className="border-t border-hairline bg-asphalt">
+      <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-24 sm:px-8 md:grid-cols-[1fr_1.2fr] md:py-28">
+        <Link href={`/${lang}/guide`} className="mx-auto block w-full max-w-[18rem] transition hover:-translate-y-1 md:max-w-xs">
+          <Image
+            src="/guide/cover.jpg"
+            alt={t.guide.kicker}
+            width={900}
+            height={1273}
+            sizes="(min-width: 768px) 20rem, 18rem"
+            className="h-auto w-full shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]"
+          />
+        </Link>
+        <div>
+          <p className="label text-fog">
+            {t.guide.kicker} · <span className="text-signal">{EBOOK.price}</span>
+          </p>
+          <h2 className="serif mt-5 text-4xl leading-[1.05] sm:text-6xl">
+            {t.guide.title1}
+            <em>{t.guide.em}</em>
+          </h2>
+          <p className="mt-6 max-w-md leading-relaxed text-mist/75">{t.guide.body}</p>
+          <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
+            <Link
+              href={`/${lang}/guide`}
+              className="group inline-flex shrink-0 whitespace-nowrap items-center justify-between gap-6 bg-signal px-6 py-4 text-sm font-medium text-white transition hover:brightness-110 sm:justify-start"
+            >
+              {t.guide.cta}
+              <span className="transition group-hover:translate-x-1">→</span>
+            </Link>
+            <span className="label text-fog">{t.guide.facts}</span>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -242,6 +293,7 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
     <main className="flex-1">
       <Hero t={t} lang={lang} />
       <Manifesto t={t} />
+      <GuideSection t={t} lang={lang} />
       <WeekSheet t={t} lang={lang} />
       <Process t={t} />
       <PaintedHill t={t} />
@@ -251,7 +303,7 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
           <Logo href={`/${lang}`} />
           <div className="flex flex-wrap items-center gap-5">
             <Link href={`/${lang}/guide`} className="label text-fog hover:text-bone">
-              {lang === "fr" ? "Le guide" : "The guide"}
+              {t.guide.kicker}
             </Link>
             <Link href={`/${lang}/privacy`} className="label text-fog hover:text-bone">
               {t.footer.privacy}

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useMe } from "@/components/AccountLink";
@@ -331,9 +332,32 @@ function PlanBody({ plan, lang }: { plan: Plan; lang: Locale }) {
         </div>
       </section>
 
+      <GuideCard lang={lang} />
+
       <p className="no-print label mt-12 text-center text-fog">
         {t.soon}
       </p>
     </div>
+  );
+}
+
+/** Encart vers le guide RunFlow (ebook), sous le plan. */
+function GuideCard({ lang }: { lang: Locale }) {
+  const g = UI_TEXT[lang].guide;
+  return (
+    <Link
+      href={`/${lang}/guide`}
+      className="no-print group mt-10 flex items-center gap-5 border border-hairline bg-asphalt p-5 transition hover:border-bone/30 sm:gap-7 sm:p-6"
+    >
+      <Image src="/guide/cover.jpg" alt="" width={900} height={1273} sizes="6rem" className="h-auto w-16 shrink-0 sm:w-24" />
+      <div className="flex-1">
+        <p className="label text-fog">{g.planK}</p>
+        <p className="serif mt-2 text-2xl leading-tight sm:text-3xl">{g.planT}</p>
+        <p className="mt-2 hidden max-w-lg text-sm leading-relaxed text-mist/70 sm:block">{g.planD}</p>
+        <p className="mt-3 text-sm text-signal">
+          {g.planCta} <span className="inline-block transition group-hover:translate-x-1">→</span>
+        </p>
+      </div>
+    </Link>
   );
 }
