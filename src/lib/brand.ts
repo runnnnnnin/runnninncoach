@@ -12,7 +12,7 @@ export const BRAND = {
 // L'ebook « Build your own running plan » (page /guide).
 // checkoutUrl : le lien de paiement Payhip / Gumroad. Tant qu'il est vide, le bouton affiche « bientôt disponible ».
 export const EBOOK = {
-  checkoutUrl: "",
+  checkoutUrl: "https://runflow8.gumroad.com/l/xclfqo",
   price: "€9.99",
   pages: 15,
 };
