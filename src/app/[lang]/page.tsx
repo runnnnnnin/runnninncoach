@@ -250,6 +250,9 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <Logo href={`/${lang}`} />
           <div className="flex flex-wrap items-center gap-5">
+            <Link href={`/${lang}/guide`} className="label text-fog hover:text-bone">
+              {lang === "fr" ? "Le guide" : "The guide"}
+            </Link>
             <Link href={`/${lang}/privacy`} className="label text-fog hover:text-bone">
               {t.footer.privacy}
             </Link>

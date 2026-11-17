@@ -8,3 +8,11 @@ export const BRAND = {
   // Adresse de contact affichée sur la page Confidentialité (à remplir).
   contactEmail: "runflowcoach@gmail.com",
 };
+
+// L'ebook « Build your own running plan » (page /guide).
+// checkoutUrl : le lien de paiement Payhip / Gumroad. Tant qu'il est vide, le bouton affiche « bientôt disponible ».
+export const EBOOK = {
+  checkoutUrl: "",
+  price: "€12.99",
+  pages: 15,
+};

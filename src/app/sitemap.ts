@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { BRAND } from "@/lib/brand";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = ["", "/create", "/privacy"];
+  const pages = ["", "/create", "/guide", "/privacy"];
   return pages.flatMap((p) =>
     (["en", "fr"] as const).map((lang) => ({
       url: `${BRAND.siteUrl}/${lang}${p}`,

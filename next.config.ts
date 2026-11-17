@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       { source: "/", destination: "/en", permanent: false },
+      // Lien court pour la bio Instagram / TikTok.
+      { source: "/guide", destination: "/en/guide", permanent: false },
+      { source: "/ebook", destination: "/en/guide", permanent: false },
       { source: "/commencer", destination: "/fr/create", permanent: true },
       { source: "/plan", destination: "/fr/plan", permanent: true },
       { source: "/confidentialite", destination: "/fr/privacy", permanent: true },
