@@ -19,6 +19,8 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Prom
     metadataBase: new URL(BRAND.siteUrl),
     title: t.title,
     description: t.description,
+    // Propriété Google Search Console (balise publique, pas un secret)
+    verification: { google: "5JSyfy90F_l0KgYEa-7dpg0FoSofgrcT87bItWYHZ_Y" },
     openGraph: {
       type: "website",
       siteName: BRAND.name,
