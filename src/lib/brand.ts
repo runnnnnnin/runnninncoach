@@ -13,6 +13,6 @@ export const BRAND = {
 // checkoutUrl : le lien de paiement Payhip / Gumroad. Tant qu'il est vide, le bouton affiche « bientôt disponible ».
 export const EBOOK = {
   checkoutUrl: "",
-  price: "€12.99",
+  price: "€9.99",
   pages: 15,
 };
