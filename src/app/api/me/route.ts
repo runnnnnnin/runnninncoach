@@ -1,5 +1,6 @@
 import { currentUser, endSession } from "@/lib/auth";
 import { deleteUser, plansOf, stravaConnected } from "@/lib/db";
+import { accessOf } from "@/lib/billing";
 import { stravaConfigured } from "@/lib/strava";
 import { disconnectStrava } from "@/lib/strava-account";
 
@@ -9,7 +10,11 @@ export async function GET() {
   if (!user) return Response.json({ user: null }, { headers: { "Cache-Control": "no-store" } });
   const plans = await plansOf(user.id).catch(() => []);
   const strava = { available: stravaConfigured(), connected: stravaConfigured() && (await stravaConnected(user.id).catch(() => false)) };
-  return Response.json({ user: { email: user.email, firstName: user.first_name }, plans, strava }, { headers: { "Cache-Control": "no-store" } });
+  const billing = await accessOf(user.id).catch(() => null);
+  return Response.json(
+    { user: { email: user.email, firstName: user.first_name }, plans, strava, billing },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 // Suppression du compte et de toutes ses données.

@@ -43,7 +43,9 @@ export function AuthForm({ lang, mode }: { lang: Locale; mode: "login" | "signup
         setBusy(false);
         return;
       }
-      router.push(`/${lang}/plans`);
+      // ?next=/fr/pricing… : on revient là où la personne était (adresses du site uniquement).
+      const next = new URLSearchParams(window.location.search).get("next");
+      router.push(next && /^\/(en|fr)\/[\w\-/?=&%.]*$/.test(next) && !next.startsWith("//") ? next : `/${lang}/plans`);
     } catch {
       setError(t.errors.unavailable);
       setBusy(false);

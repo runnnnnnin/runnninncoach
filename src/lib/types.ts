@@ -59,6 +59,11 @@ export const profileSchema = z.object({
   otherSports: z.array(otherSportSchema).max(14),
   equipment: z.array(z.enum(EQUIPMENT_KEYS)).min(1),
   injuries: z.array(z.enum(INJURY_KEYS)),
+  /** Date de la course visée (AAAA-MM-JJ), facultative. */
+  raceDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
 });
 export type Profile = z.infer<typeof profileSchema>;
 
@@ -102,6 +107,14 @@ export type Plan = {
   weeks: Week[];
   personalizedByAI: boolean;
   createdAt: string;
+  /** "free" : seules les premières semaines sont données ; "full" : le plan entier. */
+  access?: "free" | "full";
+  /** Nombre de semaines du plan complet (plus que weeks.length quand le plan est gratuit). */
+  totalWeeks?: number;
+  /** Date de la course, si le plan y mène. */
+  raceDate?: string;
+  /** Lundi de départ imposé par la date de course. */
+  startDate?: string;
   /** Identifiant du testeur en base (absent si la base n'est pas branchée). */
   testerId?: string;
 };

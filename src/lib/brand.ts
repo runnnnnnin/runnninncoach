@@ -16,3 +16,21 @@ export const EBOOK = {
   price: "€9.99",
   pages: 15,
 };
+
+// Offres payantes (paiement par Stripe). Les prix affichés et les montants facturés viennent d'ici.
+export const OFFERS = {
+  /** Plan complet, paiement unique : tout le plan jusqu'à la course (16 semaines max), 8 semaines sans course. */
+  plan: { cents: 1999, price: "€19.99" },
+  /** Abonnement Coach, mensuel : plans complets illimités et suivi. */
+  coach: { cents: 799, price: "€7.99" },
+};
+
+// Vendeur affiché dans les conditions de vente (obligatoire en France). À compléter avec le SIRET.
+export const SELLER = {
+  name: "",
+  siret: "",
+  address: "",
+  /** Ex. « TVA non applicable, art. 293 B du CGI » en franchise de TVA. */
+  vatNote: "",
+};
+

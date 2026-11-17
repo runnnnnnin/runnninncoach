@@ -6,7 +6,7 @@
  */
 import { ENGINE_TEXT, type EngineText } from "./engine-text";
 import { LABELS, sportLabel } from "./labels";
-import { DAYS, type Day, type DayPlan, type Exercise, type Plan, type Profile, type Session, type Week } from "./types";
+import { DAYS, LEVEL_KEYS as LEVEL_KEYS_ORDER, type Day, type DayPlan, type Exercise, type Plan, type Profile, type Session, type Week } from "./types";
 
 const WEEK_MULTIPLIERS = [1, 1.08, 1.16, 0.8];
 
@@ -205,9 +205,74 @@ function strengthExercises(t: EngineText, p: Profile, w: number): Exercise[] {
   return list;
 }
 
+/* ---------- Longueur du plan ---------- */
+
+/** Semaines visibles dans le plan gratuit. */
+export const FREE_WEEKS = 2;
+/** Plan complet : au plus 16 semaines (jusqu'à la course), 8 semaines sans date de course. */
+export const MAX_WEEKS = 16;
+export const DEFAULT_FULL_WEEKS = 8;
+
+type WeekSpec = { ci: 0 | 1 | 2 | 3; block: number; phase: "build" | "taper" | "race" };
+
+const DAY_MS = 86_400_000;
+const isoDate = (d: Date) => d.toISOString().slice(0, 10);
+const mondayOf = (d: Date) => new Date(d.getTime() - ((d.getUTCDay() + 6) % 7) * DAY_MS);
+
+/** Durée de course estimée (minutes) selon l'objectif et le niveau, pour la séance « jour de course ». */
+const RACE_MIN: Record<string, [number, number, number, number]> = {
+  "5k": [40, 33, 28, 23],
+  "10k": [75, 65, 55, 47],
+  chrono: [75, 65, 55, 47],
+  semi: [165, 140, 120, 100],
+  marathon: [330, 285, 245, 210],
+  trail: [200, 180, 160, 140],
+};
+
+/** Lundi de départ, nombre de semaines du plan complet et jour de la course (si date de course). */
+export function planFrame(p: Profile, today = new Date()): { weeks: number; start: string | null; raceDay: Day | null } {
+  const day0 = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+  const start0 = day0.getUTCDay() === 1 ? day0 : new Date(mondayOf(day0).getTime() + 7 * DAY_MS);
+  if (!p.raceDate || p.goal === "forme") return { weeks: DEFAULT_FULL_WEEKS, start: null, raceDay: null };
+  const race = new Date(`${p.raceDate}T00:00:00Z`);
+  if (Number.isNaN(race.getTime())) return { weeks: DEFAULT_FULL_WEEKS, start: null, raceDay: null };
+  const raceMonday = mondayOf(race);
+  let n = Math.round((raceMonday.getTime() - start0.getTime()) / (7 * DAY_MS)) + 1;
+  let start = start0;
+  // Course trop proche (cette semaine) : plan normal sans semaine de course.
+  if (n < 1) return { weeks: DEFAULT_FULL_WEEKS, start: null, raceDay: null };
+  // Course lointaine : le plan démarre 16 semaines avant.
+  if (n > MAX_WEEKS) {
+    n = MAX_WEEKS;
+    start = new Date(raceMonday.getTime() - (MAX_WEEKS - 1) * 7 * DAY_MS);
+  }
+  return { weeks: n, start: isoDate(start), raceDay: DAYS[(race.getUTCDay() + 6) % 7] };
+}
+
+/** Blocs de 3 semaines qui montent + 1 semaine allégée ; avant une course : affûtage puis semaine de course. */
+function weekSpecs(n: number, race: boolean): WeekSpec[] {
+  const build = race ? Math.max(0, n - 2) : n;
+  const specs: WeekSpec[] = [];
+  for (let i = 0; i < build; i++) {
+    let ci = (i % 4) as WeekSpec["ci"];
+    if (race && i === build - 1 && ci === 3) ci = 2; // pas deux semaines légères d'affilée avant l'affûtage
+    specs.push({ ci, block: Math.floor(i / 4), phase: "build" });
+  }
+  if (race) {
+    if (n >= 2) specs.push({ ci: 3, block: Math.floor(Math.max(0, build - 1) / 4), phase: "taper" });
+    specs.push({ ci: 3, block: 0, phase: "race" });
+  }
+  return specs;
+}
+
 /* ---------- Assemblage ---------- */
 
-export function buildPlan(p: Profile): Plan {
+/**
+ * full = false : seules les FREE_WEEKS premières semaines sont données (plan gratuit),
+ * mais le plan est construit en entier pour que ce soit bien le début du plan complet.
+ */
+export function buildPlan(p: Profile, opts: { full?: boolean; today?: Date } = {}): Plan {
+  const full = opts.full ?? true;
   const lang = p.lang ?? "en";
   const t = ENGINE_TEXT[lang];
   const L = LABELS[lang];
@@ -223,13 +288,22 @@ export function buildPlan(p: Profile): Plan {
   const intenseOther = p.otherSports.filter((s) => s.intensity === "intense").reduce((a, s) => a + s.minutes, 0);
   if (intenseOther >= 180) base *= 0.9;
   const multipliers = p.injuries.length ? [1, 1.05, 1.1, 0.8] : WEEK_MULTIPLIERS;
+  const frame = planFrame(p, opts.today);
+  const specs = weekSpecs(frame.weeks, Boolean(frame.raceDay));
+  const growth = (block: number) => 1 + 0.07 * Math.min(block, 3);
+  const volume = (sp: WeekSpec) =>
+    sp.phase === "race" ? 0.5 : sp.phase === "taper" ? 0.75 * growth(sp.block) : multipliers[sp.ci] * growth(sp.block);
+  const raceDay = frame.raceDay;
+  const eveOfRace = raceDay ? dayAt(idx(raceDay) - 1) : null;
 
   const longWeight = p.level === "debutant" ? 1.3 : p.goal === "semi" || p.goal === "marathon" || p.goal === "trail" ? 1.7 : 1.4;
   const weights = slots.map((s) => (s.kind === "longue" ? longWeight : s.kind === "qualite" ? 1.1 : 1));
   const wSum = weights.reduce((a, b) => a + b, 0);
 
-  const weeks: Week[] = multipliers.map((m, w) => {
-    const total = base * m;
+  const weeks: Week[] = specs.map((sp, w) => {
+    const total = base * volume(sp);
+    const ci = sp.ci;
+    const raceWeek = sp.phase === "race" && raceDay !== null;
     const days: DayPlan[] = DAYS.map((d) => ({
       day: d,
       sessions: [],
@@ -239,12 +313,19 @@ export function buildPlan(p: Profile): Plan {
     let runMinutes = 0;
     let qualityCount = 0;
 
-    slots.forEach((slot, i) => {
+    slots.forEach((orig, i) => {
+      // Semaine de course : rien la veille ni le jour J, la sortie longue devient un footing,
+      // et la séance de qualité ne reste que si elle tombe au moins 2 jours avant.
+      if (raceWeek && (orig.day === raceDay || orig.day === eveOfRace)) return;
+      const slot: RunSlot =
+        raceWeek && (orig.kind === "longue" || (orig.kind === "qualite" && (idx(raceDay!) - idx(orig.day) + 7) % 7 < 2))
+          ? { ...orig, kind: "facile" }
+          : orig;
       // Une séance de qualité a besoin de place pour l'échauffement et le retour au calme.
       const floor = slot.kind === "qualite" && p.level !== "debutant" ? Math.min(40, p.maxMinutes) : 20;
       const minutes = round5(clamp((total * weights[i]) / wSum, floor, p.maxMinutes));
       runMinutes += minutes;
-      const id = `s${w + 1}-${slot.day}-${slot.kind}`;
+      const id = `s${w + 1}-${slot.day}-${orig.kind}`;
       let s: Session;
       if (p.level === "debutant") {
         s = {
@@ -253,12 +334,12 @@ export function buildPlan(p: Profile): Plan {
           title: slot.kind === "longue" ? t.walkRun.titleLong : t.walkRun.title,
           minutes,
           effort: t.effort["marche-course"],
-          ...walkRun(t, minutes, w),
+          ...walkRun(t, minutes, ci),
         };
       } else if (slot.kind === "qualite") {
-        s = { id, kind: "qualite", minutes, effort: t.effort.qualite, ...qualityContent(t, p, minutes, w, qualityCount++ > 0) };
+        s = { id, kind: "qualite", minutes, effort: t.effort.qualite, ...qualityContent(t, p, minutes, ci, qualityCount++ > 0) };
       } else if (slot.kind === "longue") {
-        s = { id, kind: "longue", minutes, effort: t.effort.longue, ...longContent(t, p, w) };
+        s = { id, kind: "longue", minutes, effort: t.effort.longue, ...longContent(t, p, ci) };
       } else {
         s = {
           id,
@@ -277,8 +358,20 @@ export function buildPlan(p: Profile): Plan {
       dayPlan(slot.day).sessions.push(s);
     });
 
-    for (const d of strengthDays) {
-      const minutes = round5(clamp(25 + w * 5 - (w === 3 ? 10 : 0), 20, Math.min(40, p.maxMinutes)));
+    if (raceWeek) {
+      const minutes = RACE_MIN[p.goal]?.[LEVEL_KEYS_ORDER.indexOf(p.level)] ?? 60;
+      dayPlan(raceDay!).sessions.push({
+        id: `s${w + 1}-${raceDay}-race`,
+        kind: "longue",
+        title: t.race.title,
+        minutes,
+        effort: t.effort.qualite,
+        description: t.race.description,
+      });
+    }
+
+    for (const d of raceWeek ? [] : strengthDays) {
+      const minutes = round5(clamp(25 + ci * 5 - (ci === 3 ? 10 : 0), 20, Math.min(40, p.maxMinutes)));
       const o = p.otherSports.find((x) => x.day === d && x.intensity !== "leger");
       dayPlan(d).sessions.push({
         id: `s${w + 1}-${d}-renfo`,
@@ -287,12 +380,13 @@ export function buildPlan(p: Profile): Plan {
         minutes,
         effort: t.effort.renfo,
         description: t.strength.description,
-        exercises: strengthExercises(t, p, w),
+        exercises: strengthExercises(t, p, ci),
         coachNote: o ? t.noteSameDayStrength(sport(o.sport)) : undefined,
       });
     }
 
-    return { index: w + 1, ...t.weeks[w], runMinutes, days };
+    const focus = sp.phase === "race" ? t.focusRace : sp.phase === "taper" ? t.focusTaper : t.weeks[ci].focus;
+    return { index: w + 1, label: t.weekLabel(w + 1), focus, runMinutes, days };
   });
 
   if (p.runsPerWeek > runs) warnings.push(t.warnFewDays(p.runsPerWeek, runs));
@@ -308,7 +402,11 @@ export function buildPlan(p: Profile): Plan {
     intro: t.intro(p.firstName),
     tips: t.tips,
     warnings: [...warnings, t.warnMedical],
-    weeks,
+    weeks: full ? weeks : weeks.slice(0, FREE_WEEKS),
+    access: full ? "full" : "free",
+    totalWeeks: weeks.length,
+    ...(raceDay && p.raceDate ? { raceDate: p.raceDate } : {}),
+    ...(frame.start ? { startDate: frame.start } : {}),
     personalizedByAI: false,
     createdAt: new Date().toISOString(),
   };

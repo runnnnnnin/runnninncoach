@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useMe } from "@/components/AccountLink";
 import { MotionRunner } from "@/components/MotionRunner";
+import { OFFERS } from "@/lib/brand";
 import { loadPlanRaw } from "@/lib/storage";
 import { computeProgress, loadDone, saveDone, type Done } from "@/lib/progress";
 import { CalendarExport } from "./CalendarExport";
@@ -148,8 +149,10 @@ function PlanBody({ plan, lang }: { plan: Plan; lang: Locale }) {
   const tp = UI_TEXT[lang].prog;
   const ts = UI_TEXT[lang].strava;
   const L = LABELS[lang];
+  const tb = UI_TEXT[lang].billing;
   const me = useMe();
   const [week, setWeek] = useState(0);
+  const locked = plan.access === "free" ? Math.max(0, (plan.totalWeeks ?? 0) - plan.weeks.length) : 0;
 
   // Séances cochées : gardées dans le navigateur, et sur le serveur quand le plan y est enregistré.
   const planKey = plan.testerId ?? plan.createdAt;
@@ -271,6 +274,17 @@ function PlanBody({ plan, lang }: { plan: Plan; lang: Locale }) {
               </span>
             </button>
           ))}
+          {/* Plan gratuit : les semaines suivantes existent, mais sont verrouillées. */}
+          {Array.from({ length: locked }, (_, k) => (
+            <a
+              key={`locked-${k}`}
+              href="#unlock"
+              className="label flex shrink-0 items-center gap-2 border-b-2 border-transparent px-4 py-4 text-fog/60 hover:text-mist"
+            >
+              {t.weekTab(plan.weeks.length + k + 1)}
+              <span aria-label={tb.lockedTab}>🔒</span>
+            </a>
+          ))}
         </div>
       </div>
 
@@ -309,6 +323,8 @@ function PlanBody({ plan, lang }: { plan: Plan; lang: Locale }) {
           {plan.testerId && <WeekFeedback key={`${plan.testerId}-${wk.index}`} testerId={plan.testerId} week={wk} lang={lang} />}
         </section>
       ))}
+
+      {locked > 0 && <UnlockPanel plan={plan} lang={lang} locked={locked} />}
 
       <section className="mt-16 grid gap-px border border-hairline bg-hairline md:grid-cols-2">
         <div className="bg-night p-6">
@@ -361,3 +377,31 @@ function GuideCard({ lang }: { lang: Locale }) {
     </Link>
   );
 }
+
+/** Plan gratuit : ce qui reste à débloquer, et le lien vers les offres. */
+function UnlockPanel({ plan, lang, locked }: { plan: Plan; lang: Locale; locked: number }) {
+  const t = UI_TEXT[lang].billing;
+  const race = plan.raceDate
+    ? new Date(`${plan.raceDate}T12:00:00`).toLocaleDateString(lang === "fr" ? "fr-FR" : "en-GB", { day: "numeric", month: "long" })
+    : null;
+  return (
+    <section id="unlock" className="no-print mt-12 scroll-mt-24 border border-signal/50 bg-signal/[0.07] p-6 sm:p-8">
+      <p className="label text-signal">🔒 {t.lockedTitle(locked)}</p>
+      <p className="serif mt-4 max-w-2xl text-3xl leading-tight sm:text-4xl">{race ? t.lockedRace(race) : t.lockedSub}</p>
+      {race && <p className="mt-3 text-sm text-mist/75">{t.lockedSub}</p>}
+      <div className="mt-7 flex flex-col gap-4 sm:flex-row sm:items-center">
+        <Link
+          href={`/${lang}/pricing${plan.testerId ? `?plan=${plan.testerId}` : ""}`}
+          className="group inline-flex items-center justify-between gap-6 bg-signal px-6 py-4 text-sm font-medium text-white transition hover:brightness-110 sm:justify-start"
+        >
+          {t.lockedCta}
+          <span className="transition group-hover:translate-x-1">→</span>
+        </Link>
+        <span className="label text-fog">
+          {t.plan.name} {OFFERS.plan.price} · {t.coach.name} {OFFERS.coach.price} {t.perMonth}
+        </span>
+      </div>
+    </section>
+  );
+}
+

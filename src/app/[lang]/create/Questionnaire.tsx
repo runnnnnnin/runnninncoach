@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useMe } from "@/components/AccountLink";
 import type { Locale } from "@/i18n/config";
 import { UI_TEXT } from "@/i18n/ui";
@@ -130,6 +130,14 @@ export function Questionnaire({ lang }: { lang: Locale }) {
   const pm: [string, string] = [t.minus, t.plus];
   const router = useRouter();
   const [step, setStep] = useState(0);
+  // Bornes du sélecteur de date de course : à partir d'aujourd'hui, au plus un an.
+  // (calculées dans le navigateur, après l'affichage : la page est préparée à l'avance côté serveur).
+  const [{ today, maxRace }, setBounds] = useState<{ today?: string; maxRace?: string }>({});
+  useEffect(() => {
+    const now = new Date();
+    const iso = (x: Date) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+    Promise.resolve().then(() => setBounds({ today: iso(now), maxRace: iso(new Date(now.getFullYear() + 1, now.getMonth(), now.getDate())) }));
+  }, []);
   const [d, setD] = useState<Draft>(INITIAL);
   // Connecté : on connaît déjà le prénom et l'email, on ne les redemande pas.
   const me = useMe();
@@ -205,6 +213,20 @@ export function Questionnaire({ lang }: { lang: Locale }) {
               </Choice>
             ))}
           </div>
+          {d.goals[0] && d.goals[0] !== "forme" && (
+            <label className="block pt-4">
+              <span className="label block text-fog">{t.s2.race}</span>
+              <input
+                type="date"
+                value={d.raceDate ?? ""}
+                min={today}
+                max={maxRace}
+                onChange={(e) => set("raceDate", e.target.value || undefined)}
+                className="mt-2 w-full border border-hairline bg-asphalt px-4 py-3 text-bone [color-scheme:dark] focus:border-bone/50 focus:outline-none sm:w-64"
+              />
+              <span className="mt-2 block text-sm text-fog">{t.s2.raceHint}</span>
+            </label>
+          )}
         </div>
       ),
     },
@@ -441,7 +463,16 @@ export function Questionnaire({ lang }: { lang: Locale }) {
       const res = await fetch("/api/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...d, firstName, ...(account ? { email: account.email } : {}), goals: undefined, goal: d.goals[0], otherGoals: d.goals.slice(1), lang }),
+        body: JSON.stringify({
+          ...d,
+          firstName,
+          ...(account ? { email: account.email } : {}),
+          goals: undefined,
+          goal: d.goals[0],
+          otherGoals: d.goals.slice(1),
+          raceDate: d.goals[0] !== "forme" && d.raceDate ? d.raceDate : undefined,
+          lang,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? t.errorGeneric);

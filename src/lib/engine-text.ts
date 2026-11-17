@@ -18,6 +18,10 @@ export type EngineText = {
   perLeg: string;
   perSide: string;
   perFoot: string;
+  weekLabel: (n: number) => string;
+  focusTaper: string;
+  focusRace: string;
+  race: { title: string; description: string };
   noteAfter: (sport: string) => string;
   noteSameDayRun: (sport: string) => string;
   noteSameDayStrength: (sport: string) => string;
@@ -127,6 +131,13 @@ export const ENGINE_TEXT: Record<Locale, EngineText> = {
     perLeg: "/ jambe",
     perSide: "/ côté",
     perFoot: "/ pied",
+    weekLabel: (n) => `Semaine ${n}`,
+    focusTaper: "Affûtage : moins de volume, un peu de rythme. Tu arrives frais le jour J.",
+    focusRace: "Semaine de course : du très léger, du repos, et ta course.",
+    race: {
+      title: "Jour de course",
+      description: "Échauffe-toi 10 à 15 min, pars plus lentement que tu ne le penses et accélère sur la deuxième moitié. Profite, c'est le jour pour lequel tu t'es entraîné.",
+    },
     noteAfter: (s) => `Lendemain de ${s.toLowerCase()} : garde cette séance très tranquille, c'est aussi de la récupération.`,
     noteSameDayRun: (s) => `Tu as aussi ${s.toLowerCase()} ce jour-là : fais la course à une autre heure et reste vraiment facile.`,
     noteSameDayStrength: (s) => `Tu as aussi ${s.toLowerCase()} ce jour-là : fais le renfo à un autre moment de la journée, ou seulement la moitié des séries.`,
@@ -236,6 +247,13 @@ export const ENGINE_TEXT: Record<Locale, EngineText> = {
     perLeg: "/ leg",
     perSide: "/ side",
     perFoot: "/ foot",
+    weekLabel: (n) => `Week ${n}`,
+    focusTaper: "Taper: less volume, a little speed. You'll arrive fresh on race day.",
+    focusRace: "Race week: very light runs, rest, and your race.",
+    race: {
+      title: "Race day",
+      description: "Warm up for 10–15 min, start slower than you think and speed up in the second half. Enjoy it: this is what you trained for.",
+    },
     noteAfter: (s) => `Day after ${s.toLowerCase()}: keep this one very easy, it's recovery too.`,
     noteSameDayRun: (s) => `You also have ${s.toLowerCase()} that day: run at a different time and keep it truly easy.`,
     noteSameDayStrength: (s) => `You also have ${s.toLowerCase()} that day: do this at another time of day, or just half the sets.`,

@@ -2,7 +2,8 @@ import { z } from "zod";
 import { buildPlan } from "@/lib/engine";
 import { personalize } from "@/lib/ai";
 import { currentUser } from "@/lib/auth";
-import { hashIp, recentPlansFrom, saveTester, setUserFirstName } from "@/lib/db";
+import { accessOf, billingConfigured } from "@/lib/billing";
+import { hashIp, recentPlansFrom, saveTester, setUserFirstName, consumePlanCredit } from "@/lib/db";
 import { profileSchema } from "@/lib/types";
 
 const requestSchema = profileSchema.extend({
@@ -41,13 +42,23 @@ export async function POST(req: Request) {
     console.error("[RunFlow] Vérification anti-abus impossible :", e);
   }
 
-  const plan = await personalize(profile, buildPlan(profile));
+  // Paiements branchés : 2 semaines gratuites, plan complet avec l'abonnement Coach ou un plan complet acheté.
+  let full = !billingConfigured();
+  let useCredit = false;
+  if (!full && user) {
+    const access = await accessOf(user.id);
+    full = access.coach || access.credits > 0;
+    useCredit = !access.coach && access.credits > 0;
+  }
+
+  const plan = await personalize(profile, buildPlan(profile, { full }));
   const testerId = crypto.randomUUID();
   let saved = false;
   try {
     // Connecté : le plan est rangé directement dans « Mes plans », et le prénom est retenu pour la prochaine fois.
     if (user && !user.first_name) await setUserFirstName(user.id, profile.firstName).catch(() => {});
     saved = await saveTester({ id: testerId, email, consentNews, profile, plan, ipHash, userId: user?.id });
+    if (saved && useCredit && user) await consumePlanCredit(user.id, testerId);
   } catch (e) {
     console.error("[RunFlow] Enregistrement du testeur impossible :", e);
   }

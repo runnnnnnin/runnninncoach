@@ -20,13 +20,16 @@ const MODEL = process.env.RUNFLOW_MODEL ?? "anthropic/claude-haiku-5.5";
 export const aiConfigured = () =>
   Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN || process.env.VERCEL);
 
-const outputSchema = z.object({
+/** Au-delà de ces semaines, les séances gardent les notes du moteur (réponse plus courte, plus rapide). */
+const NOTED_WEEKS = 4;
+
+const outputSchema = (weeks: number) => z.object({
   intro: z.string().describe("Message d'accueil du coach, 2 à 4 phrases, tutoiement, motivant et concret"),
-  weekFocus: z.array(z.string()).length(4).describe("Une phrase d'objectif par semaine, dans l'ordre"),
+  weekFocus: z.array(z.string()).length(weeks).describe("Une phrase d'objectif par semaine, dans l'ordre"),
   tips: z.array(z.string()).min(3).max(4).describe("Conseils personnalisés courts"),
   sessionNotes: z
     .array(z.object({ id: z.string(), note: z.string().describe("1 à 2 phrases personnalisées") }))
-    .describe("Une note par séance, en reprenant exactement l'id fourni"),
+    .describe("Une note par séance listée avec un id, en reprenant exactement l'id fourni"),
 });
 
 function describeProfile(p: Profile) {
@@ -46,7 +49,10 @@ function describeProfile(p: Profile) {
 function describePlan(plan: Plan) {
   return plan.weeks
     .map(
-      (w) =>
+      (w, i) =>
+        i >= NOTED_WEEKS
+          ? `${w.label} (${w.runMinutes} min de course) : ${w.focus}`
+          :
         `${w.label} (${w.runMinutes} min de course)\n` +
         w.days
           .flatMap((d) => [
@@ -64,7 +70,7 @@ export async function personalize(profile: Profile, plan: Plan): Promise<Plan> {
     const { output } = await generateText({
       model: MODEL,
       timeout: 45_000,
-      output: Output.object({ schema: outputSchema }),
+      output: Output.object({ schema: outputSchema(plan.weeks.length) }),
       system:
         "Tu es le coach de RunFlow, une app de course à pied + renforcement qui tient compte des autres sports pratiqués. " +
         (profile.lang === "en"
@@ -74,7 +80,9 @@ export async function personalize(profile: Profile, plan: Plan): Promise<Plan> {
         "Le plan t'est fourni déjà construit : tu ne modifies JAMAIS les jours, durées, intensités ni le nombre de séances, " +
         "et tu ne proposes jamais d'en faire plus. Tu expliques le pourquoi des choix (notamment le lien avec les autres sports) " +
         "et tu donnes envie de s'y tenir. Pas de conseil médical : en cas de douleur, on recommande de consulter.",
-      prompt: `Profil :\n${describeProfile(profile)}\n\nPlan construit :\n${describePlan(plan)}`,
+      prompt:
+        `Profil :\n${describeProfile(profile)}${plan.raceDate ? `\nCourse visée le ${plan.raceDate}` : ""}\n\n` +
+        `Plan construit (${plan.weeks.length} semaines${plan.access === "free" ? ", début du plan gratuit" : ""}) :\n${describePlan(plan)}`,
     });
 
     const notes = new Map(output.sessionNotes.map((n) => [n.id, n.note]));

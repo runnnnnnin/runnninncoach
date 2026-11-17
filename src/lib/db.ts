@@ -80,6 +80,24 @@ async function sql() {
       )`;
       await s`ALTER TABLE completions ADD COLUMN IF NOT EXISTS activity_id bigint, ADD COLUMN IF NOT EXISTS distance_m int, ADD COLUMN IF NOT EXISTS moving_s int`;
       await s`ALTER TABLE testers ADD COLUMN IF NOT EXISTS start_date date`;
+      // Paiements (Stripe) : client et abonnement par compte, et achats de plans complets.
+      await s`CREATE TABLE IF NOT EXISTS billing (
+        user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        customer_id text,
+        sub_id text,
+        sub_status text,
+        sub_end timestamptz,
+        sub_cancel_at_end boolean NOT NULL DEFAULT false,
+        checked_at timestamptz
+      )`;
+      await s`CREATE TABLE IF NOT EXISTS purchases (
+        session_id text PRIMARY KEY,
+        user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        kind text NOT NULL,
+        amount int,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        used_plan uuid
+      )`;
     })().catch((e) => {
       _ready = null;
       throw e;
@@ -113,10 +131,10 @@ export async function saveTester(input: {
 }) {
   if (!dbConfigured()) return false;
   const s = await sql();
-  await s`INSERT INTO testers (id, first_name, email, consent_news, goal, level, profile, plan, ai, ip_hash, user_id)
+  await s`INSERT INTO testers (id, first_name, email, consent_news, goal, level, profile, plan, ai, ip_hash, user_id, start_date)
     VALUES (${input.id}, ${input.profile.firstName}, ${input.email}, ${input.consentNews}, ${input.profile.goal},
             ${input.profile.level}, ${JSON.stringify(input.profile)}, ${JSON.stringify(input.plan)},
-            ${input.plan.personalizedByAI}, ${input.ipHash}, ${input.userId ?? null})`;
+            ${input.plan.personalizedByAI}, ${input.ipHash}, ${input.userId ?? null}, ${input.plan.startDate ?? null}::date)`;
   return true;
 }
 
@@ -282,12 +300,23 @@ export async function claimPlan(testerId: string, userId: string) {
   await s`UPDATE testers SET user_id = ${userId} WHERE id = ${testerId} AND user_id IS NULL`;
 }
 
-export type PlanSummary = { id: string; created_at: string; goal_label: string; lang: string; total: number; done: number };
+export type PlanSummary = {
+  id: string;
+  created_at: string;
+  goal_label: string;
+  lang: string;
+  total: number;
+  done: number;
+  access: string | null;
+  total_weeks: number | null;
+  race_date: string | null;
+};
 
 export async function plansOf(userId: string) {
   const s = await sql();
   return (await s`
     SELECT t.id, t.created_at, t.plan->>'goalLabel' AS goal_label, coalesce(t.plan->>'lang', 'en') AS lang,
+      t.plan->>'access' AS access, (t.plan->>'totalWeeks')::int AS total_weeks, t.plan->>'raceDate' AS race_date,
       (SELECT count(*)::int FROM jsonb_array_elements(t.plan->'weeks') w, jsonb_array_elements(w->'days') d, jsonb_array_elements(d->'sessions') x) AS total,
       (SELECT count(*)::int FROM completions c WHERE c.tester_id = t.id) AS done
     FROM testers t WHERE t.user_id = ${userId} ORDER BY t.created_at DESC LIMIT 50`) as PlanSummary[];
@@ -387,3 +416,74 @@ export async function saveStravaMatch(testerId: string, m: { sessionId: string; 
     ON CONFLICT (tester_id, session_id) DO UPDATE SET activity_id = EXCLUDED.activity_id,
       distance_m = EXCLUDED.distance_m, moving_s = EXCLUDED.moving_s`;
 }
+
+/* ---------- Paiements ---------- */
+
+export type Billing = {
+  customer_id: string | null;
+  sub_id: string | null;
+  sub_status: string | null;
+  sub_end: string | null;
+  sub_cancel_at_end: boolean;
+  checked_at: string | null;
+};
+
+export async function getBilling(userId: string): Promise<Billing | null> {
+  const s = await sql();
+  const rows = await s`SELECT customer_id, sub_id, sub_status, sub_end, sub_cancel_at_end, checked_at FROM billing WHERE user_id = ${userId}`;
+  return (rows[0] as Billing) ?? null;
+}
+
+export async function saveCustomer(userId: string, customerId: string) {
+  const s = await sql();
+  await s`INSERT INTO billing (user_id, customer_id) VALUES (${userId}, ${customerId})
+    ON CONFLICT (user_id) DO UPDATE SET customer_id = excluded.customer_id`;
+}
+
+export async function saveSubscription(
+  userId: string,
+  sub: { id: string | null; status: string | null; end: string | null; cancelAtEnd: boolean },
+) {
+  const s = await sql();
+  await s`UPDATE billing SET sub_id = ${sub.id}, sub_status = ${sub.status}, sub_end = ${sub.end},
+    sub_cancel_at_end = ${sub.cancelAtEnd}, checked_at = now() WHERE user_id = ${userId}`;
+}
+
+/** Enregistre un achat payé (une seule fois par session de paiement). */
+export async function recordPurchase(p: { sessionId: string; userId: string; kind: string; amount: number | null }) {
+  const s = await sql();
+  await s`INSERT INTO purchases (session_id, user_id, kind, amount) VALUES (${p.sessionId}, ${p.userId}, ${p.kind}, ${p.amount})
+    ON CONFLICT (session_id) DO NOTHING`;
+}
+
+/** Plans complets achetés et pas encore utilisés. */
+export async function planCredits(userId: string) {
+  const s = await sql();
+  const rows = await s`SELECT count(*)::int AS n FROM purchases WHERE user_id = ${userId} AND kind = 'plan' AND used_plan IS NULL`;
+  return (rows[0]?.n as number) ?? 0;
+}
+
+/** Utilise un plan complet acheté pour ce plan. Faux s'il n'en reste aucun. */
+export async function consumePlanCredit(userId: string, testerId: string, preferSession?: string) {
+  const s = await sql();
+  const rows = await s`UPDATE purchases SET used_plan = ${testerId}
+    WHERE session_id = (
+      SELECT session_id FROM purchases WHERE user_id = ${userId} AND kind = 'plan' AND used_plan IS NULL
+      ORDER BY (session_id = ${preferSession ?? ""}) DESC, created_at LIMIT 1
+    ) RETURNING session_id`;
+  return rows.length > 0;
+}
+
+/** Profil et plan enregistrés d'un plan du compte (pour le rallonger après paiement). */
+export async function testerOf(testerId: string, userId: string) {
+  const s = await sql();
+  const rows = await s`SELECT profile, plan FROM testers WHERE id = ${testerId} AND user_id = ${userId}`;
+  return rows[0] ? { profile: rows[0].profile as Profile, plan: rows[0].plan as Plan } : null;
+}
+
+export async function replacePlan(testerId: string, userId: string, plan: Plan, profile: Profile, startDate: string | null) {
+  const s = await sql();
+  await s`UPDATE testers SET plan = ${JSON.stringify(plan)}, profile = ${JSON.stringify(profile)}, ai = ${plan.personalizedByAI},
+    start_date = coalesce(${startDate}::date, start_date) WHERE id = ${testerId} AND user_id = ${userId}`;
+}
+
