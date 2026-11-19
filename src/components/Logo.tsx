@@ -28,7 +28,7 @@ export function Logo({ href = "/", className = "" }: { href?: string; className?
   return (
     <Link href={href} className={`group flex items-center gap-1 ${className}`} aria-label={BRAND.name}>
       <LogoMark className="h-8 w-10 transition group-hover:translate-x-0.5" />
-      <span className="serif text-xl lowercase leading-none">{BRAND.name.toLowerCase()}</span>
+      <span className="serif hidden text-xl lowercase leading-none min-[380px]:inline">{BRAND.name.toLowerCase()}</span>
     </Link>
   );
 }
