@@ -36,7 +36,7 @@ export default async function PricingPage({ params }: PageProps<"/[lang]/pricing
         </nav>
         <header className="pb-12 pt-10 md:pt-16">
           <p className="label text-fog">{t.kicker}</p>
-          <h1 className="serif mt-5 text-[2.9rem] leading-[0.95] sm:text-7xl">
+          <h1 className="serif lowercase mt-5 text-[2.9rem] leading-[0.95] sm:text-7xl">
             {t.title1}
             <em className="motion-text">{t.em}</em>
           </h1>

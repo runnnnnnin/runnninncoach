@@ -5,12 +5,12 @@ import type { Locale } from "@/i18n/config";
 import { guideFor, type Pose, type Prop } from "@/lib/exercise-guide";
 import type { Exercise } from "@/lib/types";
 
-const BONE = "var(--bone)", FAR = "#6f747b", SIGNAL = "var(--signal)", MIST = "#9a9ea5";
+const BONE = "var(--bone)", FAR = "#6f747b", SIGNAL = "var(--signal)", MIST = "#8a8984";
 
 function PropShape({ p, marker }: { p: Prop; marker: string }) {
   switch (p[0]) {
     case "step":
-      return <rect x={p[1]} y={p[2]} width={p[3]} height={p[4]} fill="#22252a" stroke={MIST} strokeWidth={1.5} />;
+      return <rect x={p[1]} y={p[2]} width={p[3]} height={p[4]} fill="var(--asphalt-2)" stroke={MIST} strokeWidth={1.5} />;
     case "wall":
       return <line x1={p[1]} y1={6} x2={p[1]} y2={100} stroke={MIST} strokeWidth={3} />;
     case "line":
@@ -51,7 +51,7 @@ function Figure({ pose, marker }: { pose: Pose; marker: string }) {
           <path d="M0 0 L10 5 L0 10 z" fill={SIGNAL} />
         </marker>
       </defs>
-      <line x1={4} y1={101} x2={116} y2={101} stroke="rgba(236,232,223,0.22)" strokeWidth={1.5} />
+      <line x1={4} y1={101} x2={116} y2={101} stroke="rgba(17,17,17,0.22)" strokeWidth={1.5} />
       {pose.props?.filter((p) => p[0] !== "arrow" && p[0] !== "guide" && p[0] !== "label" && p[0] !== "band" && p[0] !== "db").map((p, i) => <PropShape key={i} p={p} marker={marker} />)}
       {pose.l2 && <polyline points={leg(pose.l2)} stroke={FAR} strokeWidth={5} {...line} />}
       {pose.a2 && <polyline points={arm(pose.a2)} stroke={FAR} strokeWidth={4} {...line} />}
@@ -89,7 +89,7 @@ export function ExerciseRow({ e, lang, defaultOpen = false }: { e: Exercise; lan
   if (!guide) return <li className="flex justify-between gap-4 border-b border-hairline py-2.5">{head}</li>;
   return (
     <li className="border-b border-hairline">
-      <button onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full items-start justify-between gap-4 py-2.5 text-left hover:text-white">
+      <button onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full items-start justify-between gap-4 py-2.5 text-left hover:text-mist">
         {head}
       </button>
       {open && (

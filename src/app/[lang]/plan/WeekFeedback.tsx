@@ -134,7 +134,7 @@ export function WeekFeedback({ testerId, week, lang }: { testerId: string; week:
         type="button"
         disabled={!feeling || status === "sending"}
         onClick={send}
-        className="mt-5 w-full bg-bone px-5 py-3.5 text-sm font-medium text-ink transition hover:bg-white disabled:opacity-25 sm:w-auto"
+        className="mt-5 w-full bg-bone px-5 py-3.5 text-sm font-medium text-ink transition hover:bg-mist disabled:opacity-25 sm:w-auto"
       >
         {status === "sending" ? t.sending : t.send}
       </button>

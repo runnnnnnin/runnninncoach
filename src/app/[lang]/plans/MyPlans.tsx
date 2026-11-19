@@ -119,7 +119,7 @@ export function MyPlans({ lang }: { lang: Locale }) {
   return (
     <div>
       <p className="label text-fog">{t.hello(data.user.firstName || data.user.email)}</p>
-      <h1 className="serif mt-4 text-6xl leading-none sm:text-7xl">
+      <h1 className="serif lowercase mt-4 text-6xl leading-none sm:text-7xl">
         {t.plansTitle}
         <em className="motion-text">{t.plansTitleEm}</em>
       </h1>
@@ -156,7 +156,7 @@ export function MyPlans({ lang }: { lang: Locale }) {
                 <button
                   onClick={() => open(p.id)}
                   disabled={busy === p.id}
-                  className="bg-bone px-5 py-3 text-sm font-medium text-ink hover:bg-white disabled:opacity-60"
+                  className="bg-bone px-5 py-3 text-sm font-medium text-ink hover:bg-mist disabled:opacity-60"
                 >
                   {t.open}
                 </button>

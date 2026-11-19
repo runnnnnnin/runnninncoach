@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useMe } from "@/components/AccountLink";
-import { MotionRunner } from "@/components/MotionRunner";
 import { OFFERS } from "@/lib/brand";
 import { loadPlanRaw } from "@/lib/storage";
 import { computeProgress, loadDone, saveDone, type Done } from "@/lib/progress";
@@ -211,9 +210,6 @@ function PlanBody({ plan, lang }: { plan: Plan; lang: Locale }) {
   return (
     <div>
       <header className="relative overflow-hidden border-b border-hairline pb-12">
-        <div className="pointer-events-none absolute -right-10 bottom-0 w-64 opacity-40 sm:w-96">
-          <MotionRunner color="#1f35d6" blur={8} ghosts={3} />
-        </div>
         <p className="label text-signal">{plan.goalLabel}</p>
         <h1 className="serif relative mt-5 text-6xl leading-[0.95] sm:text-8xl">
           {t.title}
@@ -222,7 +218,7 @@ function PlanBody({ plan, lang }: { plan: Plan; lang: Locale }) {
         <p className="relative mt-6 max-w-xl leading-relaxed text-mist/80">{plan.intro}</p>
         {plan.lang && plan.lang !== lang && <p className="relative mt-3 text-sm text-signal">{t.otherLang}</p>}
         <div className="no-print relative mt-8 flex flex-wrap gap-3">
-          <button onClick={() => window.print()} className="bg-bone px-5 py-3 text-sm font-medium text-ink hover:bg-white">
+          <button onClick={() => window.print()} className="bg-bone px-5 py-3 text-sm font-medium text-ink hover:bg-mist">
             {t.print}
           </button>
           <Link href={`/${lang}/create`} className="border border-hairline px-5 py-3 text-sm text-mist hover:border-bone/50">

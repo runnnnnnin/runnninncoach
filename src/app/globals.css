@@ -1,21 +1,25 @@
 @import "tailwindcss";
 
 /*
- * Direction : photo de sport argentique. Nuit, brume, asphalte, flou de mouvement, grain.
- * Deux accents seulement : le bleu Klein (la peinture) et le rouge signal (la chaussure).
+ * Direction « papier suisse » : papier clair, grille de colonnes, gros titres noirs en minuscules,
+ * photos noir et blanc. Une seule touche de couleur : le point rouge du logo.
+ * Les noms des couleurs viennent de l'ancienne direction (nuit) ; leur rôle est resté le même :
+ *   night = fond de page, asphalt = fond de bloc, bone = texte principal / bouton,
+ *   mist = texte secondaire, fog = étiquettes, ink = texte sur un bouton noir.
  */
 :root {
-  --night: #0a0b0d;
-  --asphalt: #15171a;
-  --asphalt-2: #1d2024;
-  --fog: #8b9097;
-  --mist: #c8cbcf;
-  --bone: #ece8df;
-  --ink: #0a0b0d;
-  --klein: #1f35d6;
-  --klein-deep: #0c1c8f;
-  --signal: #ff3d1f;
-  --hairline: rgba(236, 232, 223, 0.12);
+  --night: #e9e7e2;
+  --asphalt: #e1dfd9;
+  --asphalt-2: #d6d3cc;
+  --fog: #66655f;
+  --mist: #34332f;
+  --bone: #111111;
+  --ink: #e9e7e2;
+  --ash: #7f7e79;
+  --klein: #2f4f86;
+  --klein-deep: #1f3863;
+  --signal: #e3341c;
+  --hairline: rgba(17, 17, 17, 0.14);
 }
 
 @theme inline {
@@ -30,13 +34,15 @@
   --color-klein-deep: var(--klein-deep);
   --color-signal: var(--signal);
   --color-hairline: var(--hairline);
+  --color-ash: var(--ash);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-serif);
+  --font-display: var(--font-display);
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
@@ -45,30 +51,42 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
-/* Grain de pellicule sur tout le site */
+/* Texture papier très légère */
 body::after {
   content: "";
   position: fixed;
-  inset: -50%;
+  inset: 0;
   z-index: 60;
   pointer-events: none;
-  opacity: 0.09;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.4 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  animation: grain 0.9s steps(4) infinite;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1.2 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
 
-@keyframes grain {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(-3%, 2%); }
-  50% { transform: translate(2%, -3%); }
-  75% { transform: translate(-1%, 3%); }
-  100% { transform: translate(0, 0); }
+/* Lignes de colonnes fines, comme une grille de mise en page */
+.paper-grid {
+  background-image: linear-gradient(90deg, rgba(17, 17, 17, 0.07) 1px, transparent 1px);
+  background-size: calc(100% / 6) 100%;
+}
+@media (max-width: 640px) {
+  .paper-grid { background-size: 25% 100%; }
 }
 
+/* Photos : noir et blanc, contrastées */
+.bw {
+  filter: grayscale(1) contrast(1.08);
+}
+
+/* Titres (le nom « serif » est historique) : grotesque grasse et serrée.
+   La partie en <em> passe en gris, sans italique. */
 .serif {
-  font-family: var(--font-serif), Georgia, serif;
-  font-weight: 400;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+}
+.serif em {
+  font-style: normal;
+  color: var(--ash);
 }
 
 .label {
@@ -78,12 +96,9 @@ body::after {
   text-transform: uppercase;
 }
 
-/* Le mot qui « file » : traînée de flou de mouvement */
+/* Ancienne traînée de flou : neutre dans la direction papier */
 .motion-text {
-  text-shadow:
-    -0.06em 0 0.04em rgba(236, 232, 223, 0.22),
-    -0.16em 0 0.08em rgba(236, 232, 223, 0.12),
-    -0.32em 0 0.14em rgba(236, 232, 223, 0.06);
+  text-shadow: none;
 }
 
 .streak {
@@ -96,7 +111,6 @@ body::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body::after,
   .streak {
     animation: none;
   }

@@ -105,7 +105,7 @@ export function Pricing({ lang }: { lang: Locale }) {
       <div className="grid gap-px border border-hairline bg-hairline md:grid-cols-3">
         {/* Gratuit */}
         <section className="flex flex-col bg-night p-6 sm:p-8">
-          <h2 className="serif text-3xl">{t.free.name}</h2>
+          <h2 className="serif text-3xl lowercase">{t.free.name}</h2>
           <p className="mt-4 text-4xl font-medium tracking-tight">€0</p>
           <ul className="mt-6 flex-1 space-y-3 text-sm leading-relaxed text-mist/85">
             {t.free.points.map((x) => (
@@ -122,7 +122,7 @@ export function Pricing({ lang }: { lang: Locale }) {
 
         {/* Plan complet */}
         <section className="flex flex-col bg-night p-6 sm:p-8">
-          <h2 className="serif text-3xl">{t.plan.name}</h2>
+          <h2 className="serif text-3xl lowercase">{t.plan.name}</h2>
           <p className="mt-4 text-4xl font-medium tracking-tight">
             {OFFERS.plan.price} <span className="label align-middle text-fog">{t.perOnce}</span>
           </p>
@@ -140,7 +140,7 @@ export function Pricing({ lang }: { lang: Locale }) {
         {/* Coach */}
         <section className="relative flex flex-col bg-asphalt p-6 sm:p-8">
           <span className="label absolute right-6 top-7 text-signal sm:right-8 sm:top-9">{t.best}</span>
-          <h2 className="serif text-3xl">{t.coach.name}</h2>
+          <h2 className="serif text-3xl lowercase">{t.coach.name}</h2>
           <p className="mt-4 text-4xl font-medium tracking-tight">
             {OFFERS.coach.price} <span className="label align-middle text-fog">{t.perMonth}</span>
           </p>
@@ -172,7 +172,7 @@ export function Pricing({ lang }: { lang: Locale }) {
           </div>
         )}
         <label className="flex cursor-pointer gap-3 text-sm leading-relaxed text-mist/85">
-          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-[#ff3d1f]" />
+          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-signal" />
           <span>
             {t.consent}{" "}
             <Link href={`/${lang}/terms`} className="underline decoration-fog underline-offset-4 hover:text-bone">
@@ -215,7 +215,7 @@ export function Pricing({ lang }: { lang: Locale }) {
         onClick={onClick}
         disabled={busy !== null || !paymentsOpen}
         className={`mt-8 px-5 py-3 text-sm font-medium transition disabled:opacity-50 ${
-          primary ? "bg-signal text-white hover:brightness-110" : "bg-bone text-ink hover:bg-white"
+          primary ? "bg-signal text-white hover:brightness-110" : "bg-bone text-ink hover:bg-mist"
         }`}
       >
         {busy === kind ? "…" : !paymentsOpen ? t.errors.unavailable : label}

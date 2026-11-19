@@ -136,7 +136,7 @@ export default async function GuidePage({ params }: PageProps<"/[lang]/guide">) 
         <section className="grid items-center gap-12 pb-20 pt-8 md:grid-cols-[1.1fr_1fr] md:pt-14">
           <div>
             <p className="label text-fog">{t.kicker}</p>
-            <h1 className="serif mt-5 text-[2.9rem] leading-[0.95] sm:text-7xl">
+            <h1 className="serif lowercase mt-5 text-[2.9rem] leading-[0.95] sm:text-7xl">
               {t.h1}
               <em className="motion-text">{t.h1em}</em>
             </h1>
@@ -154,7 +154,7 @@ export default async function GuidePage({ params }: PageProps<"/[lang]/guide">) 
               height={1273}
               priority
               sizes="(min-width: 768px) 28rem, 90vw"
-              className="h-auto w-full shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]"
+              className="h-auto w-full shadow-[0_30px_80px_-20px_rgba(0,0,0,0.35)]"
             />
           </div>
         </section>
@@ -228,7 +228,7 @@ export default async function GuidePage({ params }: PageProps<"/[lang]/guide">) 
           </div>
           <Link
             href={`/${lang}/create`}
-            className="group inline-flex shrink-0 items-center gap-6 bg-ink px-6 py-4 text-sm font-medium text-bone transition hover:bg-black"
+            className="group inline-flex shrink-0 items-center gap-6 bg-ink px-6 py-4 text-sm font-medium text-bone transition hover:bg-asphalt"
           >
             {t.freeCta}
             <span className="transition group-hover:translate-x-1">→</span>

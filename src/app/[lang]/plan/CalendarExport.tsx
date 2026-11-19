@@ -59,11 +59,11 @@ export function CalendarExport({ plan, lang }: { plan: Plan; lang: Locale }) {
         </label>
       </div>
       {serverUrl ? (
-        <a href={serverUrl} className="mt-5 inline-flex w-full items-center justify-center gap-3 bg-bone px-5 py-3.5 text-sm font-medium text-ink hover:bg-white sm:w-auto">
+        <a href={serverUrl} className="mt-5 inline-flex w-full items-center justify-center gap-3 bg-bone px-5 py-3.5 text-sm font-medium text-ink hover:bg-mist sm:w-auto">
           {t.button} <span>↓</span>
         </a>
       ) : (
-        <button onClick={downloadLocally} className="mt-5 w-full bg-bone px-5 py-3.5 text-sm font-medium text-ink hover:bg-white sm:w-auto">
+        <button onClick={downloadLocally} className="mt-5 w-full bg-bone px-5 py-3.5 text-sm font-medium text-ink hover:bg-mist sm:w-auto">
           {t.button} ↓
         </button>
       )}

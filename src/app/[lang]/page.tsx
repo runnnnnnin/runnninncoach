@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { AccountLink } from "@/components/AccountLink";
 import { LangSwitch } from "@/components/LangSwitch";
 import { Logo } from "@/components/Logo";
-import { MotionRunner } from "@/components/MotionRunner";
 import { hasLocale, type Locale } from "@/i18n/config";
 import { UI_TEXT, type UI } from "@/i18n/ui";
 import { LABELS } from "@/lib/labels";
@@ -22,39 +21,16 @@ const WEEK_KINDS = [
   { kind: "run", min: "60" },
 ] as const;
 
+const FIGS = [
+  { src: "/photos/run.jpg", pos: "50% 55%" },
+  { src: "/photos/ride.jpg", pos: "50% 62%" },
+  { src: "/photos/swim.jpg", pos: "50% 50%" },
+] as const;
+
 function Hero({ t, lang }: { t: UI; lang: Locale }) {
   return (
-    <section className="relative isolate min-h-[100svh] overflow-hidden">
-      <div className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,#0c1633_0%,#121a2b_38%,#0d0f13_70%,#0a0b0d_100%)]" />
-      <div className="absolute -top-40 left-1/2 -z-10 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-mist/10 blur-3xl" />
-      <div className="absolute right-[12%] top-[16%] -z-10 h-3 w-10 rounded-full bg-white/80 blur-[6px]" />
-      <div className="absolute right-[24%] top-[22%] -z-10 h-2 w-6 rounded-full bg-white/60 blur-[5px]" />
-      <div className="absolute left-[8%] top-[28%] -z-10 h-2 w-8 rounded-full bg-white/40 blur-[6px]" />
-
-      <svg className="absolute inset-x-0 bottom-0 -z-10 h-[46%] w-full" viewBox="0 0 1440 400" preserveAspectRatio="none" aria-hidden>
-        <defs>
-          <linearGradient id="track" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#3a1410" stopOpacity="0" />
-            <stop offset="0.5" stopColor="#5a1a12" stopOpacity="0.55" />
-            <stop offset="1" stopColor="#2a0d09" stopOpacity="0.9" />
-          </linearGradient>
-          <filter id="soft">
-            <feGaussianBlur stdDeviation="2.2 0.6" />
-          </filter>
-        </defs>
-        <path d="M0 120 Q 720 60 1440 140 L1440 400 L0 400 Z" fill="url(#track)" />
-        <g stroke="#ece8df" strokeOpacity="0.5" fill="none" filter="url(#soft)">
-          <path d="M0 170 Q 720 100 1440 190" strokeWidth="2" />
-          <path d="M0 240 Q 720 160 1440 260" strokeWidth="2.5" />
-          <path d="M0 330 Q 720 240 1440 350" strokeWidth="3" />
-        </g>
-      </svg>
-
-      <div className="streak absolute bottom-[14%] right-[-6%] -z-10 w-[78%] max-w-[760px] sm:right-[2%] sm:w-[52%]">
-        <MotionRunner color="#05070b" blur={7} ghosts={3} />
-      </div>
-
-      <div className="mx-auto flex min-h-[100svh] max-w-6xl flex-col px-4 sm:px-8">
+    <section className="paper-grid relative">
+      <div className="mx-auto max-w-6xl px-4 sm:px-8">
         <nav className="flex items-center justify-between gap-4 py-6">
           <Logo href={`/${lang}`} />
           <div className="flex items-center gap-5 sm:gap-6">
@@ -65,39 +41,57 @@ function Hero({ t, lang }: { t: UI; lang: Locale }) {
             <LangSwitch lang={lang} />
             <Link
               href={`/${lang}/create`}
-              className="label hidden border-b border-bone/40 pb-1 text-bone/80 transition hover:border-bone hover:text-bone sm:inline"
+              className="label hidden border-b border-bone pb-1 text-bone transition hover:border-signal hover:text-signal sm:inline"
             >
               {t.nav.cta}
             </Link>
           </div>
         </nav>
 
-        <div className="flex flex-1 flex-col justify-center pb-40 pt-10">
+        <div className="pb-14 pt-12 sm:pb-20 sm:pt-24">
           <Link
             href={`/${lang}/guide`}
-            className="group mb-8 inline-flex w-fit items-center gap-3 border border-hairline bg-night/40 px-3.5 py-2 text-xs text-mist transition hover:border-bone/40 hover:text-bone"
+            className="group mb-10 inline-flex w-fit items-center gap-3 border border-bone/20 bg-night px-3.5 py-2 text-xs text-mist transition hover:border-bone hover:text-bone"
           >
             <span className="h-1.5 w-1.5 rounded-full bg-signal" />
             {t.guide.pill}
             <span className="transition group-hover:translate-x-0.5">→</span>
           </Link>
           <p className="label text-fog">{t.hero.kicker}</p>
-          <h1 className="serif mt-6 max-w-4xl text-[3.2rem] leading-[0.95] sm:text-[6.2rem]">
+          <h1 className="serif mt-6 max-w-5xl text-[3.3rem] lowercase leading-[0.92] sm:text-[7rem]">
             {t.hero.title1}
-            <em className="motion-text">{t.hero.titleEm}</em>
+            <em>{t.hero.titleEm}</em>
           </h1>
-          <p className="mt-8 max-w-md text-base leading-relaxed text-mist/80">{t.hero.sub}</p>
+          <p className="mt-8 max-w-md text-base leading-relaxed text-mist">{t.hero.sub}</p>
           <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
             <Link
               href={`/${lang}/create`}
-              className="group inline-flex items-center justify-between gap-6 bg-bone px-6 py-4 text-sm font-medium text-ink transition hover:bg-white sm:justify-start"
+              className="group inline-flex items-center justify-between gap-6 bg-bone px-6 py-4 text-sm font-medium text-ink transition hover:bg-mist sm:justify-start"
             >
               {t.hero.cta}
               <span className="transition group-hover:translate-x-1">→</span>
             </Link>
-            <span className="label text-fog">{t.hero.note}</span>
+            <span className="label flex items-center gap-3 text-fog">
+              <span className="h-1.5 w-1.5 rounded-full bg-signal" />
+              {t.hero.note}
+            </span>
           </div>
         </div>
+      </div>
+
+      {/* Photos pleine largeur en bas, comme la story A : une sur mobile, trois sur grand écran */}
+      <div className="grid grid-cols-1 md:grid-cols-3">
+        {FIGS.map((f, i) => (
+          <figure key={f.src} className={i > 0 ? "hidden md:block" : ""}>
+            <div className="relative aspect-[4/3] bg-asphalt-2 md:aspect-[4/5] lg:aspect-[4/3]">
+              <Image src={f.src} alt={t.hero.figs[i]} fill priority={i === 0} sizes="(min-width: 768px) 34vw, 100vw" className="bw object-cover" style={{ objectPosition: f.pos }} />
+            </div>
+            <figcaption className="label flex justify-between px-4 py-3 text-fog sm:px-8 md:px-5">
+              <span>Fig. {String(i + 1).padStart(2, "0")}</span>
+              <span>{t.hero.figs[i]}</span>
+            </figcaption>
+          </figure>
+        ))}
       </div>
     </section>
   );
@@ -108,8 +102,8 @@ function Manifesto({ t }: { t: UI }) {
     <section className="border-t border-hairline">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-24 sm:px-8 md:grid-cols-[1fr_2fr] md:py-32">
         <p className="label text-fog">{t.manifesto.kicker}</p>
-        <p className="serif text-3xl leading-[1.15] text-bone sm:text-5xl">
-          {t.manifesto.a} <span className="text-fog">{t.manifesto.b}</span> <em>{t.manifesto.c}</em>
+        <p className="serif text-3xl lowercase leading-[1.05] text-bone sm:text-6xl">
+          {t.manifesto.a} <span className="text-ash">{t.manifesto.b}</span> <em className="text-bone underline decoration-signal decoration-[0.08em] underline-offset-[0.12em]">{t.manifesto.c}</em>
         </p>
       </div>
     </section>
@@ -127,14 +121,14 @@ function GuideSection({ t, lang }: { t: UI; lang: Locale }) {
             width={900}
             height={1273}
             sizes="(min-width: 768px) 20rem, 18rem"
-            className="h-auto w-full shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]"
+            className="h-auto w-full shadow-[0_24px_60px_-24px_rgba(0,0,0,0.45)]"
           />
         </Link>
         <div>
           <p className="label text-fog">
             {t.guide.kicker} · <span className="text-signal">{EBOOK.price}</span>
           </p>
-          <h2 className="serif mt-5 text-4xl leading-[1.05] sm:text-6xl">
+          <h2 className="serif mt-5 text-4xl lowercase leading-[0.98] sm:text-6xl">
             {t.guide.title1}
             <em>{t.guide.em}</em>
           </h2>
@@ -162,7 +156,7 @@ function WeekSheet({ t, lang }: { t: UI; lang: Locale }) {
       <div className="mx-auto grid max-w-6xl gap-12 px-4 py-24 sm:px-8 md:grid-cols-2 md:items-center md:py-32">
         <div>
           <p className="label text-fog">{t.week.kicker}</p>
-          <h2 className="serif mt-5 text-4xl leading-[1.05] sm:text-6xl">
+          <h2 className="serif mt-5 text-4xl lowercase leading-[0.98] sm:text-6xl">
             {t.week.title1}
             <em>{t.week.titleEm}</em>
           </h2>
@@ -210,7 +204,7 @@ function Process({ t }: { t: UI }) {
           {t.process.steps.map((s, i) => (
             <div key={s.t} className="border-t border-hairline py-8 md:border-l md:border-t-0 md:px-8 md:first:border-l-0 md:first:pl-0">
               <span className="font-mono text-sm text-signal">{String(i + 1).padStart(2, "0")}</span>
-              <h3 className="serif mt-4 text-3xl leading-tight">{s.t}</h3>
+              <h3 className="serif mt-4 text-3xl lowercase leading-tight">{s.t}</h3>
               <p className="mt-3 text-sm leading-relaxed text-mist/70">{s.d}</p>
             </div>
           ))}
@@ -220,37 +214,24 @@ function Process({ t }: { t: UI }) {
   );
 }
 
-function PaintedHill({ t }: { t: UI }) {
+function Audiences({ t }: { t: UI }) {
   const a = t.audiences;
   return (
-    <section className="relative overflow-hidden bg-bone text-ink">
-      <div className="mx-auto grid max-w-6xl gap-12 px-4 pb-72 pt-24 sm:px-8 md:grid-cols-2 md:pb-80 md:pt-32">
+    <section className="bg-bone text-ink">
+      <div className="mx-auto grid max-w-6xl gap-12 px-4 py-24 sm:px-8 md:grid-cols-2 md:py-32">
         {[a.beginner, a.regular].map((x) => (
           <div key={x.k}>
-            <p className="label text-ink/50">{x.k}</p>
-            <h3 className="serif mt-4 text-4xl leading-[1.05] sm:text-5xl">
+            <p className="label text-ink/55">{x.k}</p>
+            <h3 className="serif mt-4 text-4xl lowercase leading-[0.98] sm:text-5xl">
               {x.t1}
               <em>{x.em}</em>
             </h3>
-            <p className="mt-5 max-w-sm leading-relaxed text-ink/65">{x.d}</p>
+            <p className="mt-5 max-w-sm leading-relaxed text-ink/70">{x.d}</p>
           </div>
         ))}
       </div>
-      <svg className="absolute inset-x-0 bottom-0 h-64 w-full md:h-72" viewBox="0 0 1440 300" preserveAspectRatio="none" aria-hidden>
-        <defs>
-          <filter id="brush" x="-5%" y="-20%" width="110%" height="140%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.012 0.18" numOctaves="3" seed="4" />
-            <feDisplacementMap in="SourceGraphic" scale="14" />
-          </filter>
-          <linearGradient id="klein" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#1f35d6" />
-            <stop offset="1" stopColor="#0c1c8f" />
-          </linearGradient>
-        </defs>
-        <path d="M-20 210 L 1460 70 L 1460 320 L -20 320 Z" fill="url(#klein)" filter="url(#brush)" />
-      </svg>
-      <div className="absolute bottom-[150px] left-[34%] w-20 sm:w-24 md:bottom-[190px]">
-        <MotionRunner color="#1f35d6" blur={2.2} ghosts={1} />
+      <div className="relative h-[58vw] max-h-[620px] min-h-[260px]">
+        <Image src="/photos/stride.jpg" alt="" fill sizes="100vw" className="bw object-cover" style={{ objectPosition: "50% 62%" }} />
       </div>
     </section>
   );
@@ -258,17 +239,16 @@ function PaintedHill({ t }: { t: UI }) {
 
 function FinalCta({ t, lang }: { t: UI; lang: Locale }) {
   return (
-    <section className="relative isolate overflow-hidden">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_50%_0%,rgba(200,203,207,0.16),transparent_60%)]" />
-      <div className="mx-auto max-w-6xl px-4 py-28 text-center sm:px-8 md:py-40">
-        <h2 className="serif text-6xl leading-none sm:text-9xl">
+    <section className="paper-grid">
+      <div className="mx-auto max-w-6xl px-4 py-28 sm:px-8 md:py-40">
+        <h2 className="serif text-7xl lowercase leading-[0.9] sm:text-[10rem]">
           {t.final.title1}
-          <em className="motion-text">{t.final.em}</em>
+          <em>{t.final.em}</em>
         </h2>
-        <p className="mx-auto mt-8 max-w-md text-mist/75">{t.final.body}</p>
+        <p className="mt-8 max-w-md text-mist">{t.final.body}</p>
         <Link
           href={`/${lang}/create`}
-          className="group mt-10 inline-flex items-center gap-6 bg-bone px-7 py-4 text-sm font-medium text-ink transition hover:bg-white"
+          className="group mt-10 inline-flex items-center gap-6 bg-bone px-7 py-4 text-sm font-medium text-ink transition hover:bg-mist"
         >
           {t.final.cta} <span className="transition group-hover:translate-x-1">→</span>
         </Link>
@@ -296,7 +276,7 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
       <GuideSection t={t} lang={lang} />
       <WeekSheet t={t} lang={lang} />
       <Process t={t} />
-      <PaintedHill t={t} />
+      <Audiences t={t} />
       <FinalCta t={t} lang={lang} />
       <footer className="border-t border-hairline">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-8">

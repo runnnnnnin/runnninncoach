@@ -55,7 +55,7 @@ export function AuthForm({ lang, mode }: { lang: Locale; mode: "login" | "signup
   const input = "mt-2 w-full border border-hairline bg-asphalt px-4 py-3 text-bone outline-none focus:border-bone/60";
   return (
     <div>
-      <h1 className="serif text-5xl leading-none sm:text-6xl">
+      <h1 className="serif lowercase text-5xl leading-none sm:text-6xl">
         {signup ? t.signupTitle : t.loginTitle}
         <em className="motion-text">{signup ? t.signupTitleEm : t.loginTitleEm}</em>
       </h1>
@@ -89,7 +89,7 @@ export function AuthForm({ lang, mode }: { lang: Locale; mode: "login" | "signup
             {error}
           </p>
         )}
-        <button disabled={busy} className="w-full bg-bone px-6 py-4 text-sm font-medium text-ink hover:bg-white disabled:opacity-60 sm:w-auto">
+        <button disabled={busy} className="w-full bg-bone px-6 py-4 text-sm font-medium text-ink hover:bg-mist disabled:opacity-60 sm:w-auto">
           {busy ? t.sending : signup ? t.submitSignup : t.submitLogin}
         </button>
       </form>

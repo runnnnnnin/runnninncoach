@@ -28,7 +28,7 @@ export default async function ExercisesPage({ params }: PageProps<"/[lang]/exerc
             <LangSwitch lang={lang} />
           </div>
         </div>
-        <h1 className="serif mt-14 text-5xl leading-none sm:text-6xl">
+        <h1 className="serif lowercase mt-14 text-5xl leading-none sm:text-6xl">
           {lang === "fr" ? "Les exercices, " : "Every exercise, "}
           <em className="motion-text">{lang === "fr" ? "en 3 étapes." : "in 3 steps."}</em>
         </h1>

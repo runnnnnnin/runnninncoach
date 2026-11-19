@@ -56,7 +56,7 @@ async function AdminContent({ searchParams }: { searchParams: Promise<{ erreur?:
           className="mt-3 w-full border border-hairline bg-asphalt px-4 py-3 text-bone outline-none focus:border-bone/50"
         />
         {erreur && <p className="mt-3 text-sm text-signal">Mot de passe incorrect.</p>}
-        <button className="mt-5 bg-bone px-6 py-3 text-sm font-medium text-ink hover:bg-white">Entrer →</button>
+        <button className="mt-5 bg-bone px-6 py-3 text-sm font-medium text-ink hover:bg-mist">Entrer →</button>
       </form>
     );
   }

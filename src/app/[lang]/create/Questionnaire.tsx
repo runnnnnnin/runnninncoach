@@ -505,7 +505,7 @@ export function Questionnaire({ lang }: { lang: Locale }) {
         </div>
       </div>
 
-      <h1 className="serif text-5xl leading-none sm:text-6xl">{current.title}</h1>
+      <h1 className="serif lowercase text-5xl leading-none sm:text-6xl">{current.title}</h1>
       {current.subtitle && <p className="mt-4 max-w-lg text-mist/70">{current.subtitle}</p>}
       <div className="mt-10">{current.body}</div>
 
@@ -523,7 +523,7 @@ export function Questionnaire({ lang }: { lang: Locale }) {
           type="button"
           disabled={!current.valid}
           onClick={() => (last ? submit() : setStep((s) => s + 1))}
-          className="bg-bone px-7 py-4 text-sm font-medium text-ink transition hover:bg-white disabled:opacity-20"
+          className="bg-bone px-7 py-4 text-sm font-medium text-ink transition hover:bg-mist disabled:opacity-20"
         >
           {last ? t.submit : t.next}
         </button>
